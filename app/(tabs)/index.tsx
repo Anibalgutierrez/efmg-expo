@@ -1,5 +1,6 @@
 import {
   useState,
+  useRef,
 } from 'react';
 
 import {
@@ -31,9 +32,6 @@ from '../../components/ui/Header';
 import IconButton
 from '../../components/ui/IconButton';
 
-import FloatingButton
-from '../../components/ui/FloatingButton';
-
 import AppText
 from '../../components/ui/AppText';
 
@@ -45,9 +43,6 @@ from '../../components/ui/Loader';
 
 import PostCard
 from '../../features/posts/components/PostCard';
-
-import CreatePostModal
-from '../../features/posts/components/CreatePostModal';
 
 import usePosts
 from '../../features/posts/hooks/usePosts';
@@ -74,6 +69,10 @@ import {
   ReelPlatform,
 } from '../../types/post.types';
 
+import 
+  useTabBar
+ from '../../context/TabBarContext';
+
 export default function HomeScreen() {
 
   const router =
@@ -91,6 +90,14 @@ export default function HomeScreen() {
 
   const canPost =
     useCanPost();
+
+  const {
+    showTabBar,
+    hideTabBar,
+  } = useTabBar();
+
+  const lastScrollY =
+    useRef(0);
 
   const [
     modalVisible,
@@ -133,64 +140,64 @@ export default function HomeScreen() {
 
     await createPost({
 
-  type:
-    data.type,
+      type:
+        data.type,
 
-  user: {
+      user: {
 
-    id:
-      user.id,
+        id:
+          user.id,
 
-    name:
-      user.name,
+        name:
+          user.name,
 
-    avatar:
-      user.avatar || '',
+        avatar:
+          user.avatar || '',
 
-    bio:
-      user.bio || '',
+        bio:
+          user.bio || '',
 
-    followersCount:
-      user.followersCount || 0,
+        followersCount:
+          user.followersCount || 0,
 
-    followingCount:
-      user.followingCount || 0,
+        followingCount:
+          user.followingCount || 0,
 
-    postsCount:
-      user.postsCount || 0,
+        postsCount:
+          user.postsCount || 0,
 
-    role:
-      user.role,
-  },
+        role:
+          user.role,
+      },
 
-  content:
-    data.content,
+      content:
+        data.content,
 
-  image:
-    imageUrl || '',
+      image:
+        imageUrl || '',
 
-  likesCount: 0,
+      likesCount: 0,
 
-  commentsCount: 0,
+      commentsCount: 0,
 
-  createdAt:
-    serverTimestamp() as any,
+      createdAt:
+        serverTimestamp() as any,
 
-  ...(data.reelUrl && {
-    reelUrl:
-      data.reelUrl,
-  }),
+      ...(data.reelUrl && {
+        reelUrl:
+          data.reelUrl,
+      }),
 
-  ...(data.platform && {
-    platform:
-      data.platform,
-  }),
+      ...(data.platform && {
+        platform:
+          data.platform,
+      }),
 
-  ...(data.thumbnail && {
-    thumbnail:
-      data.thumbnail,
-  }),
-});
+      ...(data.thumbnail && {
+        thumbnail:
+          data.thumbnail,
+      }),
+    });
 
     setModalVisible(
       false
@@ -202,8 +209,6 @@ export default function HomeScreen() {
     <Screen>
 
       <Header
-        title="EFMG"
-
         rightElement={
 
           <View>
@@ -277,6 +282,38 @@ export default function HomeScreen() {
           item.id
         }
 
+        onScroll={(event) => {
+
+  const currentY =
+    event.nativeEvent
+      .contentOffset.y;
+
+  const diff =
+    currentY -
+    lastScrollY.current;
+
+  // BAJA
+  if (
+    diff > 6 &&
+    currentY > 40
+  ) {
+
+    hideTabBar();
+  }
+
+  // SUBE
+  if (
+    diff < -6
+  ) {
+
+    showTabBar();
+  }
+
+  lastScrollY.current =
+    currentY;
+}}
+        scrollEventThrottle={16}
+
         renderItem={({ item }) => (
           <PostCard
             post={item}
@@ -334,37 +371,6 @@ export default function HomeScreen() {
         }
       />
 
-      {true && (
-
-        <FloatingButton
-          onPress={() =>
-            setModalVisible(
-              true
-            )
-          }
-        />
-
-      )}
-
-      <CreatePostModal
-        visible={
-          modalVisible
-        }
-
-        onClose={() =>
-          setModalVisible(
-            false
-          )
-        }
-
-        onSubmit={
-          handleCreatePost
-        }
-
-        onPickImage={
-          pickImage
-        }
-      />
 
     </Screen>
   );

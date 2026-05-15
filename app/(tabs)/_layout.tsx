@@ -16,11 +16,18 @@ import {
   useUserStore,
 } from '../../store/useUserStore';
 
+import useTabBar
+from '../../context/TabBarContext';
+
 export default function TabsLayout() {
 
   const {
     COLORS,
   } = useTheme();
+
+  const {
+    visible,
+  } = useTabBar();
 
   const user =
     useUserStore(
@@ -32,6 +39,10 @@ export default function TabsLayout() {
   } = useNotifications(
     user?.id
   );
+
+  const canCreatePost =
+    user?.role === 'admin' ||
+    user?.role === 'influencer';
 
   return (
 
@@ -48,9 +59,23 @@ export default function TabsLayout() {
           borderTopColor:
             COLORS.border,
 
-          height: 70,
+          height:
+            visible
+              ? 70
+              : 0,
 
-          paddingBottom: 10,
+          paddingBottom:
+            visible
+              ? 10
+              : 0,
+
+          overflow:
+            'hidden',
+
+          display:
+            visible
+              ? 'flex'
+              : 'none',
         },
 
         tabBarActiveTintColor:
@@ -104,6 +129,32 @@ export default function TabsLayout() {
           ),
         }}
       />
+
+    {/* CREATE */}
+{canCreatePost && (
+
+  <Tabs.Screen
+    name="create"
+
+    options={{
+
+      title: 'Crear',
+
+      tabBarIcon: ({
+        color,
+        size,
+      }) => (
+
+        <Ionicons
+          name="add"
+          size={size}
+          color={color}
+        />
+      ),
+    }}
+  />
+
+)}
 
       {/* MATCHES */}
       <Tabs.Screen

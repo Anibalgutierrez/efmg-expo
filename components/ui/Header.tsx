@@ -1,6 +1,7 @@
 import {
   View,
   Pressable,
+  Image,
 } from 'react-native';
 
 import {
@@ -15,7 +16,7 @@ from '../../hooks/useTheme';
 
 type Props = {
 
-  title: string;
+  title?: string;
 
   leftElement?: React.ReactNode;
 
@@ -38,6 +39,7 @@ export default function Header({
 
   const {
     COLORS,
+    isDark,
   } = useTheme();
 
   return (
@@ -45,7 +47,7 @@ export default function Header({
     <View
       style={{
 
-        height: 60,
+        height: 70,
 
         backgroundColor:
           COLORS.surface,
@@ -106,18 +108,49 @@ export default function Header({
 
       </View>
 
-      {/* TITLE */}
-      <AppText
+      {/* CENTER */}
+      <View
         style={{
-
-          fontSize: 20,
-
-          fontWeight:
-            'bold',
+          flex: 1,
+          alignItems:
+            'center',
         }}
       >
-        {title}
-      </AppText>
+
+        {title ? (
+
+          <AppText
+            style={{
+
+              fontSize: 20,
+
+              fontWeight:
+                'bold',
+            }}
+          >
+            {title}
+          </AppText>
+
+        ) : (
+
+          <Image
+            source={
+              isDark
+                ? require('../../assets/logos/logo-light.png')
+                : require('../../assets/logos/logo-dark.png')
+            }
+
+            resizeMode="contain"
+
+            style={{
+              width: 170,
+              height: 70,
+            }}
+          />
+
+        )}
+
+      </View>
 
       {/* RIGHT */}
       <View

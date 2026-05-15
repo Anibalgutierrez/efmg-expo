@@ -19,6 +19,10 @@ import {
   initAuthListener,
 } from '../services/auth/auth-listener.service';
 
+import {
+  TabBarProvider,
+} from '../context/TabBarContext';
+
 export default function RootLayout() {
 
   const user =
@@ -72,10 +76,15 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    />
+
+    <TabBarProvider>
+
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+
+    </TabBarProvider>
   );
 }
