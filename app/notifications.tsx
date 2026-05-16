@@ -1,14 +1,22 @@
 import {
   useEffect,
+  useCallback,
 } from 'react';
-
 
 import {
   FlatList,
+  View,
 } from 'react-native';
+
+import {
+  useRouter,
+} from 'expo-router';
 
 import Screen
 from '../components/ui/Screen';
+
+import Header
+from '../components/ui/Header';
 
 import Container
 from '../components/ui/Container';
@@ -30,7 +38,14 @@ import {
   markNotificationsAsRead,
 } from '../services/notifications/notifications.service';
 
+import {
+  SPACING,
+} from '../theme';
+
 export default function NotificationsScreen() {
+
+  const router =
+    useRouter();
 
   const user =
     useUserStore(
@@ -43,49 +58,115 @@ export default function NotificationsScreen() {
     user?.id
   );
 
-
+  // =========================
+  // MARK AS READ
+  // =========================
   useEffect(() => {
 
-  if (!user?.id) return;
+    if (!user?.id) {
+      return;
+    }
 
-  markNotificationsAsRead(
-    user.id
-  );
+    markNotificationsAsRead(
+      user.id
+    );
 
-}, []);
+  }, [
+    user?.id,
+  ]);
 
+  // =========================
+  // RENDER ITEM
+  // =========================
+  const renderItem =
+    useCallback(
+      ({ item }: any) => (
 
+        <Container>
+
+          <NotificationCard
+            notification={
+              item
+            }
+          />
+
+        </Container>
+
+      ),
+      []
+    );
+
+  // =========================
+  // EMPTY
+  // =========================
+  const renderEmpty =
+    useCallback(
+      () => (
+
+        <Container>
+
+          <View
+            style={{
+              paddingTop: 120,
+              alignItems:
+                'center',
+            }}
+          >
+
+            <AppText
+              style={{
+                opacity: 0.7,
+              }}
+            >
+              No hay notificaciones
+            </AppText>
+
+          </View>
+
+        </Container>
+
+      ),
+      []
+    );
 
   return (
+
     <Screen>
+
+      <Header
+        title="Notificaciones"
+
+        onBack={() =>
+          router.back()
+        }
+      />
 
       <FlatList
         data={notifications}
+
+        renderItem={
+          renderItem
+        }
 
         keyExtractor={(item) =>
           item.id
         }
 
-        renderItem={({ item }) => (
-          <Container>
+        showsVerticalScrollIndicator={
+          false
+        }
 
-            <NotificationCard
-              notification={
-                item
-              }
-            />
+        contentContainerStyle={{
+          paddingTop:
+            SPACING.md,
 
-          </Container>
-        )}
+          paddingBottom: 120,
+
+          flexGrow: 1,
+        }}
 
         ListEmptyComponent={
-          <Container>
-
-            <AppText>
-              No hay notificaciones
-            </AppText>
-
-          </Container>
+          renderEmpty
         }
       />
 

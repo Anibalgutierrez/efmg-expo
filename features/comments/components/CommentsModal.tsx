@@ -1,7 +1,6 @@
 import {
   Modal,
   View,
-  FlatList,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -10,20 +9,26 @@ import {
 
 import {
   useState,
+  useCallback,
+  memo,
 } from 'react';
+
+import {
+  FlashList,
+} from '@shopify/flash-list';
 
 import {
   Ionicons,
 } from '@expo/vector-icons';
 
 import AppButton
-from '../../../components/ui/AppButton';
+  from '../../../components/ui/AppButton';
 
 import AppText
-from '../../../components/ui/AppText';
+  from '../../../components/ui/AppText';
 
 import Avatar
-from '../../../components/ui/Avatar';
+  from '../../../components/ui/Avatar';
 
 import {
   SPACING,
@@ -31,14 +36,15 @@ import {
 } from '../../../theme';
 
 import useTheme
-from '../../../hooks/useTheme';
+  from '../../../hooks/useTheme';
 
 import useComments
-from '../hooks/useComments';
+  from '../hooks/useComments';
 
 import {
   createComment,
-} from '../../../services/comments/comments.service';
+  deleteComment,
+} from '../../../services/posts/comments.service';
 
 import {
   useUserStore,
@@ -54,6 +60,138 @@ type Props = {
   postOwnerId: string;
 };
 
+const CommentItem = memo(
+  ({
+    item,
+    COLORS,
+    isOwner,
+    onDelete,
+  }: any) => {
+
+    return (
+
+      <View
+        style={{
+
+          flexDirection:
+            'row',
+
+          alignItems:
+            'flex-start',
+
+          marginBottom: 12,
+        }}
+      >
+
+        <Avatar
+          uri={
+            item.user?.avatar
+          }
+
+          size={42}
+        />
+
+        <View
+          style={{
+
+            flex: 1,
+
+            marginLeft: 12,
+
+            backgroundColor:
+              COLORS.surface,
+
+            borderRadius:
+              RADIUS.lg,
+
+            padding:
+              SPACING.md,
+
+            borderWidth: 1,
+
+            borderColor:
+              COLORS.border,
+          }}
+        >
+
+          <View
+            style={{
+
+              flexDirection:
+                'row',
+
+              justifyContent:
+                'space-between',
+
+              alignItems:
+                'center',
+
+              marginBottom: 4,
+            }}
+          >
+
+            <AppText
+              style={{
+
+                fontWeight:
+                  'bold',
+
+                color:
+                  COLORS.text,
+              }}
+            >
+              {
+                item.user?.name ||
+                'Usuario'
+              }
+            </AppText>
+
+            {isOwner && (
+
+              <Pressable
+                onPress={() =>
+                  onDelete(
+                    item.id
+                  )
+                }
+
+                hitSlop={10}
+              >
+
+                <Ionicons
+                  name="trash-outline"
+
+                  size={18}
+
+                  color={
+                    COLORS.textSecondary
+                  }
+                />
+
+              </Pressable>
+
+            )}
+
+          </View>
+
+          <AppText
+            style={{
+              color:
+                COLORS.text,
+
+              lineHeight: 22,
+            }}
+          >
+            {item.text}
+          </AppText>
+
+        </View>
+
+      </View>
+    );
+  }
+);
+
 export default function CommentsModal({
 
   visible,
@@ -61,8 +199,6 @@ export default function CommentsModal({
   onClose,
 
   postId,
-
-  postOwnerId,
 
 }: Props) {
 
@@ -91,32 +227,129 @@ export default function CommentsModal({
     setLoading,
   ] = useState(false);
 
+  // =========================
+  // CREATE COMMENT
+  // =========================
   async function handleComment() {
 
     if (
       !text.trim()
-    ) return;
+    ) {
+      return;
+    }
 
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     try {
 
       setLoading(true);
 
       await createComment(
-        postId,
-        postOwnerId,
-        user,
-        text
-      );
+  postId,
+  {
+    text,
+
+    createdAt:
+      new Date() as any,
+
+    user: {
+
+      id:
+        user.id,
+
+      name:
+        user.name,
+
+      avatar:
+        user.avatar || '',
+
+      bio:
+        user.bio || '',
+
+      followersCount:
+        user.followersCount || 0,
+
+      followingCount:
+        user.followingCount || 0,
+
+      postsCount:
+        user.postsCount || 0,
+
+      role:
+        user.role,
+    },
+  }
+);
 
       setText('');
+
+    } catch (error) {
+
+      console.log(
+        error
+      );
 
     } finally {
 
       setLoading(false);
     }
   }
+
+  // =========================
+  // DELETE COMMENT
+  // =========================
+  async function handleDeleteComment(
+    commentId: string
+  ) {
+
+    try {
+
+      await deleteComment(
+        postId,
+        commentId
+      );
+
+    } catch (error) {
+
+      console.log(
+        error
+      );
+    }
+  }
+
+  const renderItem =
+    useCallback(({
+      item,
+    }: any) => (
+
+      <CommentItem
+        item={item}
+
+        COLORS={COLORS}
+
+        isOwner={
+          item.user?.id ===
+          user?.id
+        }
+
+        onDelete={
+          handleDeleteComment
+        }
+      />
+
+    ), [
+      COLORS,
+      user?.id,
+    ]);
+
+  const keyExtractor =
+    useCallback(
+      (item: any) =>
+        item.id,
+      []
+    );
 
   return (
 
@@ -127,6 +360,8 @@ export default function CommentsModal({
 
       presentationStyle="fullScreen"
 
+      statusBarTranslucent
+
       onRequestClose={
         onClose
       }
@@ -135,7 +370,7 @@ export default function CommentsModal({
       <KeyboardAvoidingView
         behavior={
           Platform.OS ===
-          'ios'
+            'ios'
             ? 'padding'
             : undefined
         }
@@ -230,96 +465,29 @@ export default function CommentsModal({
         </View>
 
         {/* COMMENTS */}
-        <FlatList
-          data={comments}
+        <FlashList
+          data={comments || []}
 
-          keyExtractor={(item) =>
-            item.id
+          renderItem={
+            renderItem
           }
 
-          contentContainerStyle={{
+          keyExtractor={
+            keyExtractor
+          }
 
+          estimatedItemSize={90}
+
+          removeClippedSubviews={false}
+
+          keyboardShouldPersistTaps="handled"
+
+          contentContainerStyle={{
             padding:
               SPACING.lg,
 
-            gap: SPACING.md,
-
             paddingBottom: 140,
           }}
-
-          renderItem={({
-            item,
-          }) => (
-
-            <View
-              style={{
-
-                flexDirection:
-                  'row',
-
-                gap: 12,
-              }}
-            >
-
-              <Avatar
-                uri={
-                  item.user.avatar
-                }
-
-                size={42}
-              />
-
-              <View
-                style={{
-
-                  flex: 1,
-
-                  backgroundColor:
-                    COLORS.surface,
-
-                  borderRadius:
-                    RADIUS.lg,
-
-                  padding:
-                    SPACING.md,
-
-                  borderWidth: 1,
-
-                  borderColor:
-                    COLORS.border,
-                }}
-              >
-
-                <AppText
-                  style={{
-
-                    fontWeight:
-                      'bold',
-
-                    color:
-                      COLORS.text,
-
-                    marginBottom: 4,
-                  }}
-                >
-                  {item.user.name}
-                </AppText>
-
-                <AppText
-                  style={{
-                    color:
-                      COLORS.text,
-
-                    lineHeight: 22,
-                  }}
-                >
-                  {item.text}
-                </AppText>
-
-              </View>
-
-            </View>
-          )}
 
           ListEmptyComponent={
 

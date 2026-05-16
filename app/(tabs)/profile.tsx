@@ -82,6 +82,7 @@ export default function ProfileScreen() {
   if (!user) {
 
     return (
+
       <Screen>
 
         <Container>
@@ -98,6 +99,7 @@ export default function ProfileScreen() {
   }
 
   return (
+
     <Screen>
 
       <FlatList
@@ -108,6 +110,7 @@ export default function ProfileScreen() {
         }
 
         renderItem={({ item }) => (
+
           <Container>
 
             <PostCard
@@ -121,9 +124,26 @@ export default function ProfileScreen() {
           false
         }
 
+        removeClippedSubviews={false}
+
+        keyboardShouldPersistTaps="handled"
+
         contentContainerStyle={{
+
           paddingBottom: 140,
         }}
+
+        ListEmptyComponent={
+
+          <Container>
+
+            <EmptyState
+              title=
+                "Todavía no hay publicaciones."
+            />
+
+          </Container>
+        }
 
         ListHeaderComponent={
 
@@ -131,6 +151,7 @@ export default function ProfileScreen() {
 
             <View
               style={{
+
                 alignItems:
                   'center',
 
@@ -148,6 +169,7 @@ export default function ProfileScreen() {
 
               <AppText
                 style={{
+
                   fontSize: 24,
 
                   fontWeight:
@@ -161,10 +183,15 @@ export default function ProfileScreen() {
               </AppText>
 
               {!!user.bio && (
+
                 <AppText
                   style={{
+
                     marginTop:
                       SPACING.sm,
+
+                    textAlign:
+                      'center',
                   }}
                 >
                   {user.bio}
@@ -174,6 +201,7 @@ export default function ProfileScreen() {
               {/* STATS */}
               <View
                 style={{
+
                   flexDirection:
                     'row',
 
@@ -189,6 +217,7 @@ export default function ProfileScreen() {
 
                 <View
                   style={{
+
                     alignItems:
                       'center',
                   }}
@@ -196,15 +225,14 @@ export default function ProfileScreen() {
 
                   <AppText
                     style={{
+
                       fontWeight:
                         'bold',
 
                       fontSize: 20,
                     }}
                   >
-                    {
-                      user.postsCount || 0
-                    }
+                    {posts.length}
                   </AppText>
 
                   <AppText>
@@ -215,6 +243,7 @@ export default function ProfileScreen() {
 
                 <View
                   style={{
+
                     alignItems:
                       'center',
                   }}
@@ -222,6 +251,7 @@ export default function ProfileScreen() {
 
                   <AppText
                     style={{
+
                       fontWeight:
                         'bold',
 
@@ -241,6 +271,7 @@ export default function ProfileScreen() {
 
                 <View
                   style={{
+
                     alignItems:
                       'center',
                   }}
@@ -248,6 +279,7 @@ export default function ProfileScreen() {
 
                   <AppText
                     style={{
+
                       fontWeight:
                         'bold',
 
@@ -270,6 +302,7 @@ export default function ProfileScreen() {
               {/* ACTIONS */}
               <View
                 style={{
+
                   width: '100%',
 
                   marginTop:

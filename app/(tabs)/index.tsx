@@ -1,77 +1,57 @@
 import {
-  useState,
   useRef,
 } from 'react';
 
 import {
-  FlatList,
   View,
+  RefreshControl,
+  StyleSheet,
 } from 'react-native';
+
+import {
+  FlashList,
+} from '@shopify/flash-list';
 
 import {
   useRouter,
 } from 'expo-router';
 
 import {
-  serverTimestamp,
-} from 'firebase/firestore';
-
-import {
   useUserStore,
 } from '../../store/useUserStore';
 
-import useCanPost
-from '../../hooks/useCanPost';
-
 import Screen
-from '../../components/ui/Screen';
+  from '../../components/ui/Screen';
 
 import Header
-from '../../components/ui/Header';
+  from '../../components/ui/Header';
 
 import IconButton
-from '../../components/ui/IconButton';
+  from '../../components/ui/IconButton';
 
 import AppText
-from '../../components/ui/AppText';
+  from '../../components/ui/AppText';
 
 import EmptyState
-from '../../components/ui/EmptyState';
+  from '../../components/ui/EmptyState';
 
 import Loader
-from '../../components/ui/Loader';
-
-import PostCard
-from '../../features/posts/components/PostCard';
-
-import usePosts
-from '../../features/posts/hooks/usePosts';
-
-import {
-  createPost,
-} from '../../services/posts/posts.service';
-
-import useImagePicker
-from '../../hooks/useImagePicker';
-
-import {
-  uploadImage,
-} from '../../services/storage/storage.service';
+  from '../../components/ui/Loader';
 
 import HeroCarousel
-from '../../features/hero/components/HeroCarousel';
+  from '../../features/hero/components/HeroCarousel';
 
 import useUnreadNotifications
-from '../../features/notifications/hooks/useUnreadNotifications';
+  from '../../features/notifications/hooks/useUnreadNotifications';
 
-import {
-  PostType,
-  ReelPlatform,
-} from '../../types/post.types';
+import useTabBar
+  from '../../context/TabBarContext';
 
-import 
-  useTabBar
- from '../../context/TabBarContext';
+import FeedItem
+  from '../../features/posts/components/FeedItem';
+
+import usePosts
+  from '../../features/posts/hooks/usePosts';
 
 export default function HomeScreen() {
 
@@ -88,9 +68,6 @@ export default function HomeScreen() {
       user?.id
     );
 
-  const canPost =
-    useCanPost();
-
   const {
     showTabBar,
     hideTabBar,
@@ -99,110 +76,21 @@ export default function HomeScreen() {
   const lastScrollY =
     useRef(0);
 
-  const [
-    modalVisible,
-    setModalVisible,
-  ] = useState(false);
-
   const {
+
     posts,
+
     loading,
+
+    loadingMore,
+
+    refreshing,
+
+    loadMorePosts,
+
+    refreshPosts,
+
   } = usePosts();
-
-  const {
-    pickImage,
-  } = useImagePicker();
-
-  async function handleCreatePost(
-    data: {
-      type: PostType;
-      content: string;
-      imageUri?: string;
-      reelUrl?: string;
-      thumbnail?: string;
-      platform?: ReelPlatform;
-    }
-  ) {
-
-    if (!user) return;
-
-    let imageUrl = '';
-
-    if (
-      data.imageUri
-    ) {
-
-      imageUrl =
-        await uploadImage(
-          data.imageUri
-        );
-    }
-
-    await createPost({
-
-      type:
-        data.type,
-
-      user: {
-
-        id:
-          user.id,
-
-        name:
-          user.name,
-
-        avatar:
-          user.avatar || '',
-
-        bio:
-          user.bio || '',
-
-        followersCount:
-          user.followersCount || 0,
-
-        followingCount:
-          user.followingCount || 0,
-
-        postsCount:
-          user.postsCount || 0,
-
-        role:
-          user.role,
-      },
-
-      content:
-        data.content,
-
-      image:
-        imageUrl || '',
-
-      likesCount: 0,
-
-      commentsCount: 0,
-
-      createdAt:
-        serverTimestamp() as any,
-
-      ...(data.reelUrl && {
-        reelUrl:
-          data.reelUrl,
-      }),
-
-      ...(data.platform && {
-        platform:
-          data.platform,
-      }),
-
-      ...(data.thumbnail && {
-        thumbnail:
-          data.thumbnail,
-      }),
-    });
-
-    setModalVisible(
-      false
-    );
-  }
 
   return (
 
@@ -227,42 +115,13 @@ export default function HomeScreen() {
             {unreadCount > 0 && (
 
               <View
-                style={{
-
-                  position:
-                    'absolute',
-
-                  top: -2,
-                  right: -2,
-
-                  minWidth: 18,
-                  height: 18,
-
-                  borderRadius: 999,
-
-                  backgroundColor:
-                    'red',
-
-                  justifyContent:
-                    'center',
-
-                  alignItems:
-                    'center',
-
-                  paddingHorizontal: 4,
-                }}
+                style={styles.badge}
               >
 
                 <AppText
-                  style={{
-
-                    color: 'white',
-
-                    fontSize: 10,
-
-                    fontWeight:
-                      'bold',
-                  }}
+                  style={
+                    styles.badgeText
+                  }
                 >
                   {unreadCount}
                 </AppText>
@@ -275,103 +134,218 @@ export default function HomeScreen() {
         }
       />
 
-      <FlatList
-        data={posts}
-
-        keyExtractor={(item) =>
-          item.id
-        }
-
-        onScroll={(event) => {
-
-  const currentY =
-    event.nativeEvent
-      .contentOffset.y;
-
-  const diff =
-    currentY -
-    lastScrollY.current;
-
-  // BAJA
-  if (
-    diff > 6 &&
-    currentY > 40
-  ) {
-
-    hideTabBar();
-  }
-
-  // SUBE
-  if (
-    diff < -6
-  ) {
-
-    showTabBar();
-  }
-
-  lastScrollY.current =
-    currentY;
-}}
-        scrollEventThrottle={16}
-
-        renderItem={({ item }) => (
-          <PostCard
-            post={item}
-          />
-        )}
-
-        showsVerticalScrollIndicator={
-          false
-        }
-
-        ListHeaderComponent={
-          <>
-
-            <HeroCarousel />
-
-            {user && (
-
-              <AppText
-                style={{
-                  marginVertical:
-                    16,
-
-                  fontWeight:
-                    'bold',
-                }}
-              >
-                Bienvenido{' '}
-                {user.name}
-              </AppText>
-
-            )}
-
-          </>
-        }
-
-        contentContainerStyle={{
-          paddingBottom:
-            140,
-
-          paddingHorizontal:
-            16,
+      {/* IMPORTANTÍSIMO */}
+      <View
+        style={{
+          flex: 1,
         }}
+      >
 
-        ListEmptyComponent={
-          loading
-            ? (
-              <Loader />
-            )
-            : (
-              <EmptyState
-                title=
-                  "No hay posts todavía."
-              />
-            )
-        }
-      />
+        <FlashList
 
+          data={posts}
+
+          estimatedItemSize={420}
+
+          keyExtractor={(item) =>
+            item.id
+          }
+
+          renderItem={({ item }) => (
+
+            <FeedItem
+              post={item}
+            />
+
+          )}
+
+          // =========================
+          // PAGINATION
+          // =========================
+          onEndReached={() => {
+
+            loadMorePosts();
+          }}
+
+          onEndReachedThreshold={0.4}
+
+          // =========================
+          // REFRESH
+          // =========================
+          refreshControl={
+
+            <RefreshControl
+              refreshing={
+                refreshing
+              }
+
+              onRefresh={
+                refreshPosts
+              }
+            />
+          }
+
+          // =========================
+          // PERFORMANCE
+          // =========================
+          scrollEventThrottle={16}
+
+          removeClippedSubviews
+
+          showsVerticalScrollIndicator={
+            false
+          }
+
+          keyboardShouldPersistTaps=
+            "handled"
+
+          // =========================
+          // TABBAR ANIMATION
+          // =========================
+          onScroll={(event) => {
+
+            const currentY =
+              event.nativeEvent
+                .contentOffset.y;
+
+            const diff =
+              currentY -
+              lastScrollY.current;
+
+            // DOWN
+            if (
+              diff > 6 &&
+              currentY > 40
+            ) {
+
+              hideTabBar();
+            }
+
+            // UP
+            if (
+              diff < -6
+            ) {
+
+              showTabBar();
+            }
+
+            lastScrollY.current =
+              currentY;
+          }}
+
+          // =========================
+          // HEADER
+          // =========================
+          ListHeaderComponent={
+
+            <>
+
+              <HeroCarousel />
+
+              {user && (
+
+                <AppText
+                  style={{
+
+                    marginVertical: 16,
+
+                    fontWeight:
+                      'bold',
+                  }}
+                >
+                  Bienvenido {user.name}
+                </AppText>
+
+              )}
+
+            </>
+          }
+
+          // =========================
+          // FOOTER
+          // =========================
+          ListFooterComponent={
+
+            loadingMore
+              ? (
+                <View
+                  style={{
+                    paddingVertical: 24,
+                  }}
+                >
+                  <Loader />
+                </View>
+              )
+              : null
+          }
+
+          // =========================
+          // EMPTY
+          // =========================
+          ListEmptyComponent={
+
+            loading
+              ? <Loader />
+              : (
+                <EmptyState
+                  title=
+                    "No hay posts todavía."
+                />
+              )
+          }
+
+          // =========================
+          // CONTENT
+          // =========================
+          contentContainerStyle={{
+
+            paddingBottom: 140,
+
+            paddingHorizontal: 16,
+          }}
+        />
+
+      </View>
 
     </Screen>
   );
 }
+
+const styles =
+  StyleSheet.create({
+
+    badge: {
+
+      position:
+        'absolute',
+
+      top: -2,
+      right: -2,
+
+      minWidth: 18,
+      height: 18,
+
+      borderRadius: 999,
+
+      backgroundColor:
+        'red',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
+      paddingHorizontal: 4,
+    },
+
+    badgeText: {
+
+      color: 'white',
+
+      fontSize: 10,
+
+      fontWeight:
+        'bold',
+    },
+  });

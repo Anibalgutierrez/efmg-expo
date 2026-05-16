@@ -3,11 +3,13 @@ import {
   TextInput,
   Pressable,
   ScrollView,
+  Alert,
 } from 'react-native';
 
 import {
   useState,
-  useEffect,
+  useCallback,
+  useMemo,
 } from 'react';
 
 import {
@@ -41,8 +43,9 @@ import {
 import useTheme
 from '../../hooks/useTheme';
 
-import useImagePicker
-from '../../hooks/useImagePicker';
+import useImagePicker, {
+  PickedImage,
+} from '../../hooks/useImagePicker';
 
 import {
   createPost,
@@ -58,7 +61,6 @@ import {
 
 import {
   PostType,
-  ReelPlatform,
 } from '../../types/post.types';
 
 export default function CreateScreen() {
@@ -79,6 +81,9 @@ export default function CreateScreen() {
     pickImage,
   } = useImagePicker();
 
+  // =========================
+  // STATE
+  // =========================
   const [
     type,
     setType,
@@ -103,233 +108,317 @@ export default function CreateScreen() {
     setReelUrl,
   ] = useState('');
 
-const [
-  loading,
-  setLoading,
-] = useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-  function resetForm() {
+  // =========================
+  // RESET
+  // =========================
+  const resetForm =
+    useCallback(() => {
 
-    setContent('');
-    setImageUri(undefined);
-    setReelUrl('');
-    setType('post');
-  }
+      setContent('');
+      setImageUri(undefined);
+      setReelUrl('');
+      setType('post');
 
-  useEffect(() => {
+    }, []);
 
-    return () => {
+  // =========================
+  // PICK IMAGE
+  // =========================
+  const handlePickImage =
+    useCallback(async () => {
 
-      resetForm();
-    };
+      const image:
+        PickedImage | null =
+          await pickImage();
 
-  }, []);
-
-  async function handlePickImage() {
-
-    const uri =
-      await pickImage();
-
-    if (uri) {
-
-      setImageUri(uri);
-    }
-  }
-
-  function getYoutubeThumbnail(
-    url: string
-  ) {
-
-    try {
-
-      let videoId = '';
-
-      if (
-        url.includes(
-          'youtube.com/shorts/'
-        )
-      ) {
-
-        videoId =
-          url.split(
-            'shorts/'
-          )[1]
-          ?.split('?')[0];
-
-      } else if (
-        url.includes(
-          'youtu.be/'
-        )
-      ) {
-
-        videoId =
-          url.split(
-            'youtu.be/'
-          )[1]
-          ?.split('?')[0];
-
-      } else if (
-        url.includes(
-          'watch?v='
-        )
-      ) {
-
-        videoId =
-          new URL(url)
-            .searchParams
-            .get('v') || '';
+      if (!image?.uri) {
+        return;
       }
 
-      if (!videoId) {
+      setImageUri(
+        image.uri
+      );
+
+    }, [
+      pickImage,
+    ]);
+
+  // =========================
+  // YOUTUBE THUMB
+  // =========================
+  const getYoutubeThumbnail =
+    useCallback((
+      url: string
+    ) => {
+
+      try {
+
+        let videoId = '';
+
+        if (
+          url.includes(
+            'youtube.com/shorts/'
+          )
+        ) {
+
+          videoId =
+            url
+              .split(
+                'shorts/'
+              )[1]
+              ?.split('?')[0];
+
+        } else if (
+          url.includes(
+            'youtu.be/'
+          )
+        ) {
+
+          videoId =
+            url
+              .split(
+                'youtu.be/'
+              )[1]
+              ?.split('?')[0];
+
+        } else if (
+          url.includes(
+            'watch?v='
+          )
+        ) {
+
+          videoId =
+            new URL(url)
+              .searchParams
+              .get('v') || '';
+        }
+
+        if (!videoId) {
+          return '';
+        }
+
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+      } catch {
+
         return '';
       }
 
-      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    }, []);
 
-    } catch {
+  // =========================
+  // USER DATA
+  // =========================
+  const userData =
+    useMemo(() => {
 
-      return '';
-    }
-  }
+      if (!user) {
+        return null;
+      }
 
-  async function handleSubmit() {
+      return {
 
-  if (
-    !user ||
-    loading
-  ) return;
+        id:
+          user.id,
 
-  try {
+        name:
+          user.name,
 
-    setLoading(true);
+        avatar:
+          user.avatar || '',
 
-    let imageUrl = '';
+        bio:
+          user.bio || '',
 
-    if (
-      imageUri
-    ) {
+        followersCount:
+          user.followersCount || 0,
 
-      imageUrl =
-        await uploadImage(
+        followingCount:
+          user.followingCount || 0,
+
+        postsCount:
+          user.postsCount || 0,
+
+        role:
+          user.role,
+      };
+
+    }, [
+      user,
+    ]);
+
+  // =========================
+  // SUBMIT
+  // =========================
+  const handleSubmit =
+    useCallback(async () => {
+
+      if (
+        !user ||
+        !userData ||
+        loading
+      ) {
+        return;
+      }
+
+      // =========================
+      // VALIDATIONS
+      // =========================
+      if (
+        type === 'post' &&
+        !content.trim() &&
+        !imageUri
+      ) {
+
+        Alert.alert(
+          'Error',
+          'Agrega texto o una imagen.'
+        );
+
+        return;
+      }
+
+      if (
+        type === 'reel' &&
+        !reelUrl.trim()
+      ) {
+
+        Alert.alert(
+          'Error',
+          'Pega un enlace de YouTube.'
+        );
+
+        return;
+      }
+
+      try {
+
+        setLoading(true);
+
+        // =========================
+        // REEL THUMBNAIL
+        // =========================
+        const thumbnail =
+          type === 'reel'
+            ? getYoutubeThumbnail(
+                reelUrl
+              )
+            : undefined;
+
+        // =========================
+        // IMAGE UPLOAD
+        // =========================
+        let uploadedImage:
+          | {
+              original: string;
+              medium: string;
+              thumb: string;
+            }
+          | undefined;
+
+        if (
+          type === 'post' &&
           imageUri
-        );
-    }
+        ) {
 
-    if (
-      type === 'post'
-    ) {
+          uploadedImage =
+            await uploadImage(
+              imageUri
+            );
+        }
 
-      await createPost({
+        // =========================
+        // POST DATA
+        // =========================
+        const postData = {
 
-        type,
+          type,
 
-        user: {
+          user:
+            userData,
 
-          id:
-            user.id,
+          content:
+            content.trim(),
 
-          name:
-            user.name,
+          likesCount: 0,
 
-          avatar:
-            user.avatar || '',
+          commentsCount: 0,
 
-          bio:
-            user.bio || '',
+          createdAt:
+            serverTimestamp(),
 
-          followersCount:
-            user.followersCount || 0,
+          ...(type === 'post' &&
+            uploadedImage && {
 
-          followingCount:
-            user.followingCount || 0,
+              image:
+                uploadedImage,
+            }),
 
-          postsCount:
-            user.postsCount || 0,
+          ...(type === 'reel'
+            ? {
 
-          role:
-            user.role,
-        },
+                reelUrl:
+                  reelUrl.trim(),
 
-        content,
+                thumbnail,
 
-        image:
-          imageUrl || '',
+                platform:
+                  'youtube',
+              }
+            : {}),
+        };
 
-        likesCount: 0,
-
-        commentsCount: 0,
-
-        createdAt:
-          serverTimestamp() as any,
-      });
-
-    } else {
-
-      const thumbnail =
-        getYoutubeThumbnail(
-          reelUrl
+        // =========================
+        // CREATE
+        // =========================
+        await createPost(
+          postData as any
         );
 
-      await createPost({
+        // =========================
+        // SUCCESS
+        // =========================
+        resetForm();
 
-        type,
+        router.replace(
+          '/(tabs)'
+        );
 
-        user: {
+      } catch (error) {
 
-          id:
-            user.id,
+        console.log(
+          'CREATE POST ERROR:',
+          error
+        );
 
-          name:
-            user.name,
+        Alert.alert(
+          'Error',
+          'No se pudo publicar.'
+        );
 
-          avatar:
-            user.avatar || '',
+      } finally {
 
-          bio:
-            user.bio || '',
+        setLoading(false);
+      }
 
-          followersCount:
-            user.followersCount || 0,
+    }, [
 
-          followingCount:
-            user.followingCount || 0,
-
-          postsCount:
-            user.postsCount || 0,
-
-          role:
-            user.role,
-        },
-
-        content,
-
-        image: '',
-
-        likesCount: 0,
-
-        commentsCount: 0,
-
-        createdAt:
-          serverTimestamp() as any,
-
-        reelUrl,
-
-        thumbnail,
-
-        platform:
-          'youtube',
-      });
-    }
-
-    resetForm();
-
-    router.replace('/(tabs)');
-
-  } finally {
-
-    setLoading(false);
-  }
-}
+      content,
+      getYoutubeThumbnail,
+      imageUri,
+      loading,
+      reelUrl,
+      resetForm,
+      router,
+      type,
+      user,
+      userData,
+    ]);
 
   return (
 
@@ -337,6 +426,7 @@ const [
 
       <Header
         title="Crear"
+
         onBack={() => {
 
           resetForm();
@@ -397,8 +487,7 @@ const [
               borderRadius: 14,
 
               backgroundColor:
-                type ===
-                'post'
+                type === 'post'
                   ? COLORS.primary
                   : COLORS.background,
             }}
@@ -431,8 +520,7 @@ const [
               borderRadius: 14,
 
               backgroundColor:
-                type ===
-                'reel'
+                type === 'reel'
                   ? COLORS.primary
                   : COLORS.background,
             }}
@@ -492,12 +580,18 @@ const [
 
           <>
 
-            {imageUri && (
+            {!!imageUri && (
 
               <Image
-                source={imageUri}
+                source={{
+                  uri: imageUri,
+                }}
+
+                cachePolicy="memory-disk"
 
                 contentFit="cover"
+
+                transition={120}
 
                 style={{
 
@@ -541,6 +635,10 @@ const [
               setReelUrl
             }
 
+            autoCapitalize="none"
+
+            autoCorrect={false}
+
             style={{
 
               backgroundColor:
@@ -558,18 +656,18 @@ const [
         )}
 
         <AppButton
-  title={
-    loading
-      ? 'Publicando...'
-      : 'Publicar'
-  }
+          title={
+            loading
+              ? 'Publicando...'
+              : 'Publicar'
+          }
 
-  disabled={loading}
+          disabled={loading}
 
-  onPress={
-    handleSubmit
-  }
-/>
+          onPress={
+            handleSubmit
+          }
+        />
 
       </ScrollView>
 

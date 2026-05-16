@@ -1,16 +1,16 @@
 import {
   useState,
   useEffect,
+  useRef,
+  useCallback,
 } from 'react';
 
 import {
   increment,
-  updateDoc,
   doc,
-  setDoc,
-  deleteDoc,
   onSnapshot,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore';
 
 import {
@@ -25,6 +25,10 @@ import {
   useUserStore,
 } from '../../../store/useUserStore';
 
+import {
+  usePostsStore,
+} from '../../../store/usePostsStore';
+
 export default function useLikePost(
   postId: string,
 
@@ -35,20 +39,56 @@ export default function useLikePost(
   postOwnerId?: string
 ) {
 
+  // =========================
+  // STORES
+  // =========================
   const currentUser =
     useUserStore(
       (state) => state.user
     );
 
+  const updateLikes =
+    usePostsStore(
+      (state) =>
+        state.updateLikes
+    );
+
+  // =========================
+  // LOCAL STATE
+  // =========================
   const [liked, setLiked] =
     useState(false);
 
   const [likes, setLikes] =
     useState(initialLikes);
 
+  // =========================
+  // SYNC INITIAL LIKES
+  // =========================
   useEffect(() => {
 
-    if (!userId) return;
+    setLikes(
+      initialLikes
+    );
+
+  }, [
+    initialLikes,
+  ]);
+
+  // =========================
+  // REFS
+  // =========================
+  const processingRef =
+    useRef(false);
+
+  // =========================
+  // REALTIME LIKE STATUS
+  // =========================
+  useEffect(() => {
+
+    if (!userId) {
+      return;
+    }
 
     const likeRef = doc(
       db,
@@ -71,117 +111,233 @@ export default function useLikePost(
 
     return unsubscribe;
 
-  }, [postId, userId]);
+  }, [
+    postId,
+    userId,
+  ]);
 
-  async function toggleLike() {
+  // =========================
+  // TOGGLE LIKE
+  // =========================
+  const toggleLike =
+    useCallback(async () => {
 
-    try {
+      if (
+        !userId ||
+        processingRef.current
+      ) {
+        return;
+      }
 
-      if (!userId) return;
+      processingRef.current =
+        true;
 
-      const postRef = doc(
-        db,
-        'posts',
-        postId
+      const previousLiked =
+        liked;
+
+      const previousLikes =
+        likes;
+
+      const nextLiked =
+        !previousLiked;
+
+      const nextLikes =
+        nextLiked
+
+          ? previousLikes + 1
+
+          : Math.max(
+              0,
+              previousLikes - 1
+            );
+
+      // =========================
+      // OPTIMISTIC UI
+      // =========================
+      setLiked(
+        nextLiked
       );
 
-      const likeRef = doc(
-        db,
-        'posts',
+      setLikes(
+        nextLikes
+      );
+
+      updateLikes(
         postId,
-        'likes',
-        userId
+        nextLikes
       );
 
-      if (liked) {
+      try {
 
-        await deleteDoc(
-          likeRef
+        const postRef = doc(
+          db,
+          'posts',
+          postId
         );
 
-        await updateDoc(
-          postRef,
-          {
-            likesCount:
-              increment(-1),
+        const likeRef = doc(
+          db,
+          'posts',
+          postId,
+          'likes',
+          userId
+        );
+
+        // =========================
+        // FIREBASE TRANSACTION
+        // =========================
+        await runTransaction(
+          db,
+
+          async (
+            transaction
+          ) => {
+
+            const likeSnap =
+              await transaction.get(
+                likeRef
+              );
+
+            const alreadyLiked =
+              likeSnap.exists();
+
+            // =========================
+            // REMOVE LIKE
+            // =========================
+            if (
+              alreadyLiked
+            ) {
+
+              transaction.delete(
+                likeRef
+              );
+
+              transaction.update(
+                postRef,
+                {
+                  likesCount:
+                    increment(-1),
+                }
+              );
+
+              return;
+            }
+
+            // =========================
+            // ADD LIKE
+            // =========================
+            transaction.set(
+              likeRef,
+              {
+                createdAt:
+                  serverTimestamp(),
+              }
+            );
+
+            transaction.update(
+              postRef,
+              {
+                likesCount:
+                  increment(1),
+              }
+            );
           }
         );
 
-        setLikes(
-          (prev) => prev - 1
-        );
-
-      } else {
-
-        await setDoc(
-          likeRef,
-          {
-            createdAt:
-              serverTimestamp(),
-          }
-        );
-
-        await updateDoc(
-          postRef,
-          {
-            likesCount:
-              increment(1),
-          }
-        );
-
-        setLikes(
-          (prev) => prev + 1
-        );
-
+        // =========================
         // NOTIFICATION
+        // =========================
         if (
+          nextLiked &&
           postOwnerId &&
           postOwnerId !==
             currentUser?.id
         ) {
 
-          await createNotification({
+          createNotification({
 
-  receiverId:
-    postOwnerId,
+            receiverId:
+              postOwnerId,
 
-  type: 'like',
+            type:
+              'like',
 
-  senderId:
-    currentUser?.id || '',
+            senderId:
+              currentUser?.id || '',
 
-  senderName:
-    currentUser?.name ||
-    'Usuario',
+            senderName:
+              currentUser?.name ||
+              'Usuario',
 
-  senderAvatar:
-    currentUser?.avatar ||
-    '',
+            senderAvatar:
+              currentUser?.avatar ||
+              '',
 
-  postId,
+            postId,
 
-  text:
-    'le dio like a tu publicación',
-});
+            text:
+              'le dio like a tu publicación',
+          }).catch(
+            console.log
+          );
         }
+
+      } catch (error) {
+
+        console.log(
+          'LIKE ERROR:',
+          error
+        );
+
+        // =========================
+        // ROLLBACK
+        // =========================
+        setLiked(
+          previousLiked
+        );
+
+        setLikes(
+          previousLikes
+        );
+
+        updateLikes(
+          postId,
+          previousLikes
+        );
+
+      } finally {
+
+        processingRef.current =
+          false;
       }
 
-      setLiked(
-        (prev) => !prev
-      );
+    }, [
 
-    } catch (error) {
+      liked,
 
-      console.log(
-        'Error toggling like:',
-        error
-      );
-    }
-  }
+      likes,
+
+      postId,
+
+      postOwnerId,
+
+      currentUser?.id,
+
+      currentUser?.name,
+
+      currentUser?.avatar,
+
+      updateLikes,
+
+      userId,
+    ]);
 
   return {
+
     liked,
+
     likes,
+
     toggleLike,
   };
 }

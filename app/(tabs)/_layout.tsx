@@ -108,53 +108,32 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* REELS */}
-      <Tabs.Screen
-        name="reels"
+{/* CREATE */}
+<Tabs.Screen
+  name="create"
 
-        options={{
+  options={{
 
-          title: 'Reels',
+    href:
+      canCreatePost
+        ? '/create'
+        : null,
 
-          tabBarIcon: ({
-            color,
-            size,
-          }) => (
+    title: 'Crear',
 
-            <Ionicons
-              name="play-circle"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
+    tabBarIcon: ({
+      color,
+      size,
+    }) => (
+
+      <Ionicons
+        name="add"
+        size={size}
+        color={color}
       />
-
-    {/* CREATE */}
-{canCreatePost && (
-
-  <Tabs.Screen
-    name="create"
-
-    options={{
-
-      title: 'Crear',
-
-      tabBarIcon: ({
-        color,
-        size,
-      }) => (
-
-        <Ionicons
-          name="add"
-          size={size}
-          color={color}
-        />
-      ),
-    }}
-  />
-
-)}
+    ),
+  }}
+/>
 
       {/* MATCHES */}
       <Tabs.Screen
@@ -171,34 +150,6 @@ export default function TabsLayout() {
 
             <Ionicons
               name="football"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      {/* NOTIFICATIONS */}
-      <Tabs.Screen
-        name="notifications"
-
-        options={{
-
-          title:
-            'Notificaciones',
-
-          tabBarBadge:
-            unreadCount > 0
-              ? unreadCount
-              : undefined,
-
-          tabBarIcon: ({
-            color,
-            size,
-          }) => (
-
-            <Ionicons
-              name="notifications"
               size={size}
               color={color}
             />

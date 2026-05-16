@@ -1,7 +1,16 @@
 import {
-  Image,
   View,
+  StyleProp,
+  ImageStyle,
 } from 'react-native';
+
+import {
+  Image,
+} from 'expo-image';
+
+import {
+  memo,
+} from 'react';
 
 import {
   RADIUS,
@@ -11,54 +20,119 @@ import useTheme
 from '../../hooks/useTheme';
 
 type Props = {
+
   uri?: string;
+
   size?: number;
+
+  width?: number;
+
+  height?: number;
+
+  style?: StyleProp<ImageStyle>;
 };
 
-export default function Avatar({
+function Avatar({
+
   uri,
+
   size = 48,
+
+  width,
+
+  height,
+
+  style,
+
 }: Props) {
 
   const {
     COLORS,
   } = useTheme();
 
+  const finalWidth =
+    width || size;
+
+  const finalHeight =
+    height || size;
+
+  const borderRadius =
+    Math.min(
+      finalWidth,
+      finalHeight
+    ) / 2;
+
+  // =========================
+  // EMPTY AVATAR
+  // =========================
   if (!uri) {
 
     return (
 
       <View
-        style={{
+        style={[
 
-          width: size,
+          {
 
-          height: size,
+            width:
+              finalWidth,
 
-          borderRadius:
-            RADIUS.full,
+            height:
+              finalHeight,
 
-          backgroundColor:
-            COLORS.surfaceLight,
-        }}
+            borderRadius,
+
+            backgroundColor:
+              COLORS.surfaceLight,
+          },
+
+          style,
+        ]}
       />
+
     );
   }
 
+  // =========================
+  // IMAGE AVATAR
+  // =========================
   return (
 
     <Image
-      source={{ uri }}
-
-      style={{
-
-        width: size,
-
-        height: size,
-
-        borderRadius:
-          RADIUS.full,
+      source={{
+        uri,
       }}
+
+      cachePolicy=
+        "memory-disk"
+
+      recyclingKey={uri}
+
+      transition={80}
+
+      contentFit=
+        "cover"
+
+      style={[
+
+        {
+
+          width:
+            finalWidth,
+
+          height:
+            finalHeight,
+
+          borderRadius,
+        },
+
+        style,
+      ]}
     />
+
   );
 }
+
+export default memo(
+  Avatar
+);

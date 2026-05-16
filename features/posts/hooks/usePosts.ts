@@ -1,31 +1,436 @@
-import { useEffect, useState } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 
-import {subscribeToPosts,} from '../../../services/posts/posts.service';
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  startAfter,
+  DocumentData,
+  QueryDocumentSnapshot,
+  onSnapshot,
+} from 'firebase/firestore';
 
-import { Post }
-from '../../../types/post.types';
+import {
+  db,
+} from '../../../firebase/config';
+
+import {
+  Post,
+} from '../../../types/post.types';
+
+import {
+  usePostsStore,
+} from '../../../store/usePostsStore';
+
+import useImagePrefetch
+from '../../../hooks/useImagePrefetch';
+
+const PAGE_SIZE = 10;
 
 export default function usePosts() {
-    const [posts, setPosts] = useState<Post[]>(
-        []
+
+  const posts =
+    usePostsStore(
+      (state) => state.posts
     );
 
-    const [loading, setLoading] =
-        useState(true);
+  const setPosts =
+    usePostsStore(
+      (state) => state.setPosts
+    );
 
-    useEffect(() => {
-        const unsubscribe =
-            subscribeToPosts((data) => {
-                setPosts(data);
+  const appendPosts =
+    usePostsStore(
+      (state) => state.appendPosts
+    );
 
-                setLoading(false);
-            });
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-        return unsubscribe;
-    }, []);
+  const [
+    loadingMore,
+    setLoadingMore,
+  ] = useState(false);
 
-    return {
-        posts,
-        loading,
-    };
+  const [
+    refreshing,
+    setRefreshing,
+  ] = useState(false);
+
+  const [
+    hasMore,
+    setHasMore,
+  ] = useState(true);
+
+  const lastDocRef =
+    useRef<
+      QueryDocumentSnapshot<DocumentData>
+      | null
+    >(null);
+
+  const initializedRef =
+    useRef(false);
+
+  // =========================
+  // SERIALIZER
+  // =========================
+  const serializePosts =
+    useCallback(
+      (
+        snapshot: any
+      ): Post[] => {
+
+        return snapshot.docs.map(
+          (doc: any) => ({
+
+            id: doc.id,
+
+            ...doc.data(),
+
+          })
+        ) as Post[];
+      },
+      []
+    );
+
+  // =========================
+  // INITIAL LOAD
+  // =========================
+  const loadInitialPosts =
+    useCallback(async () => {
+
+      try {
+
+        setLoading(true);
+
+        const q = query(
+
+          collection(
+            db,
+            'posts'
+          ),
+
+          orderBy(
+            'createdAt',
+            'desc'
+          ),
+
+          limit(
+            PAGE_SIZE
+          )
+        );
+
+        const snapshot =
+          await getDocs(q);
+
+        const fetchedPosts =
+          serializePosts(
+            snapshot
+          );
+
+        setPosts(
+          fetchedPosts
+        );
+
+        lastDocRef.current =
+          snapshot.docs[
+            snapshot.docs.length - 1
+          ] || null;
+
+        setHasMore(
+          snapshot.docs.length >=
+          PAGE_SIZE
+        );
+
+      } catch (error) {
+
+        console.log(
+          'LOAD POSTS ERROR:',
+          error
+        );
+
+      } finally {
+
+        setLoading(false);
+      }
+
+    }, [
+      serializePosts,
+      setPosts,
+    ]);
+
+  // =========================
+  // LOAD MORE
+  // =========================
+  const loadMorePosts =
+    useCallback(async () => {
+
+      if (
+        loadingMore ||
+        !hasMore ||
+        !lastDocRef.current
+      ) return;
+
+      try {
+
+        setLoadingMore(true);
+
+        const q = query(
+
+          collection(
+            db,
+            'posts'
+          ),
+
+          orderBy(
+            'createdAt',
+            'desc'
+          ),
+
+          startAfter(
+            lastDocRef.current
+          ),
+
+          limit(
+            PAGE_SIZE
+          )
+        );
+
+        const snapshot =
+          await getDocs(q);
+
+        const fetchedPosts =
+          serializePosts(
+            snapshot
+          );
+
+        appendPosts(
+          fetchedPosts
+        );
+
+        lastDocRef.current =
+          snapshot.docs[
+            snapshot.docs.length - 1
+          ] || null;
+
+        setHasMore(
+          snapshot.docs.length >=
+          PAGE_SIZE
+        );
+
+      } catch (error) {
+
+        console.log(
+          'LOAD MORE ERROR:',
+          error
+        );
+
+      } finally {
+
+        setLoadingMore(false);
+      }
+
+    }, [
+
+      appendPosts,
+
+      hasMore,
+
+      loadingMore,
+
+      serializePosts,
+    ]);
+
+  // =========================
+  // REFRESH
+  // =========================
+  const refreshPosts =
+    useCallback(async () => {
+
+      try {
+
+        setRefreshing(true);
+
+        const q = query(
+
+          collection(
+            db,
+            'posts'
+          ),
+
+          orderBy(
+            'createdAt',
+            'desc'
+          ),
+
+          limit(
+            PAGE_SIZE
+          )
+        );
+
+        const snapshot =
+          await getDocs(q);
+
+        const fetchedPosts =
+          serializePosts(
+            snapshot
+          );
+
+        setPosts(
+          fetchedPosts
+        );
+
+        lastDocRef.current =
+          snapshot.docs[
+            snapshot.docs.length - 1
+          ] || null;
+
+        setHasMore(
+          snapshot.docs.length >=
+          PAGE_SIZE
+        );
+
+      } catch (error) {
+
+        console.log(
+          'REFRESH ERROR:',
+          error
+        );
+
+      } finally {
+
+        setRefreshing(false);
+      }
+
+    }, [
+      serializePosts,
+      setPosts,
+    ]);
+
+  // =========================
+  // FIRST LOAD
+  // =========================
+  useEffect(() => {
+
+    if (
+      initializedRef.current
+    ) return;
+
+    initializedRef.current =
+      true;
+
+    if (
+      posts.length === 0
+    ) {
+
+      loadInitialPosts();
+    }
+
+  }, []);
+
+  // =========================
+  // REALTIME TOP POSTS
+  // =========================
+  useEffect(() => {
+
+    const q = query(
+
+      collection(
+        db,
+        'posts'
+      ),
+
+      orderBy(
+        'createdAt',
+        'desc'
+      ),
+
+      limit(
+        PAGE_SIZE
+      )
+    );
+
+    const unsubscribe =
+      onSnapshot(
+        q,
+        (snapshot) => {
+
+          const fetchedPosts =
+            serializePosts(
+              snapshot
+            );
+
+          setPosts(
+            fetchedPosts
+          );
+
+          lastDocRef.current =
+            snapshot.docs[
+              snapshot.docs.length - 1
+            ] || null;
+
+          setHasMore(
+            snapshot.docs.length >=
+            PAGE_SIZE
+          );
+        }
+      );
+
+    return () =>
+      unsubscribe();
+
+  }, [
+    serializePosts,
+    setPosts,
+  ]);
+
+  // =========================
+  // PREFETCH IMAGES
+  // =========================
+  const imageUrls =
+    posts.flatMap(
+      (post) => [
+
+        post.user?.avatar,
+
+        typeof post.image ===
+          'string'
+
+          ? post.image
+
+          : post.image?.medium,
+
+        post.thumbnail,
+      ]
+    ).filter(Boolean);
+
+  useImagePrefetch(
+    imageUrls as string[]
+  );
+
+  return {
+
+    posts,
+
+    loading,
+
+    loadingMore,
+
+    refreshing,
+
+    hasMore,
+
+    loadMorePosts,
+
+    refreshPosts,
+  };
 }

@@ -1,23 +1,23 @@
 import {
-  ReactNode,
-} from 'react';
-
-import {
   Text,
-  TextStyle,
+  TextProps,
 } from 'react-native';
 
 import useTheme
 from '../../hooks/useTheme';
 
-type Props = {
-  children: ReactNode;
-  style?: TextStyle;
-};
+type Props =
+  TextProps & {
+    children:
+      React.ReactNode;
+
+    style?: any;
+  };
 
 export default function AppText({
   children,
   style,
+  ...props
 }: Props) {
 
   const {
@@ -27,20 +27,19 @@ export default function AppText({
   return (
 
     <Text
+      {...props}
+
       style={[
+
         {
           color:
             COLORS.text,
-
-          fontSize: 16,
         },
 
         style,
       ]}
     >
-
       {children}
-
     </Text>
   );
 }

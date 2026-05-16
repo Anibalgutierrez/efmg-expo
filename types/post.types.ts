@@ -22,7 +22,14 @@ export type Post = {
 
   content: string;
 
-  image?: string;
+  image?: {
+
+  original: string;
+
+  medium: string;
+
+  thumb: string;
+};
 
   // REELS
   reelUrl?: string;

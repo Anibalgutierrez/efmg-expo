@@ -4,36 +4,145 @@ import {
   uploadBytes,
 } from 'firebase/storage';
 
-import { storage }
-from '../../firebase/config';
+import {
+  manipulateAsync,
+  SaveFormat,
+} from 'expo-image-manipulator';
 
-export async function uploadImage(
+import {
+  storage,
+} from '../../firebase/config';
+
+export type UploadedImageSizes = {
+
+  original: string;
+
+  medium: string;
+
+  thumb: string;
+};
+
+async function uploadSingleImage(
   uri: string,
-  folder: string = 'posts'
+  path: string
 ) {
+
   const response =
     await fetch(uri);
 
   const blob =
     await response.blob();
 
-  const filename =
-    `${Date.now()}`;
-
-  const storageRef = ref(
-    storage,
-    `${folder}/${filename}`
-  );
+  const storageRef =
+    ref(
+      storage,
+      path
+    );
 
   await uploadBytes(
     storageRef,
     blob
   );
 
-  const downloadURL =
-    await getDownloadURL(
-      storageRef
+  return await getDownloadURL(
+    storageRef
+  );
+}
+
+export async function uploadImage(
+  uri: string,
+  folder: string = 'posts'
+): Promise<UploadedImageSizes> {
+
+  const filename =
+    `${Date.now()}`;
+
+  // =========================
+  // ORIGINAL
+  // =========================
+  const originalUrl =
+    await uploadSingleImage(
+
+      uri,
+
+      `${folder}/original/${filename}.webp`
     );
 
-  return downloadURL;
+  // =========================
+  // MEDIUM
+  // =========================
+  const mediumImage =
+    await manipulateAsync(
+
+      uri,
+
+      [
+        {
+          resize: {
+            width: 900,
+          },
+        },
+      ],
+
+      {
+
+        compress: 0.7,
+
+        format:
+          SaveFormat.WEBP,
+      }
+    );
+
+  const mediumUrl =
+    await uploadSingleImage(
+
+      mediumImage.uri,
+
+      `${folder}/medium/${filename}.webp`
+    );
+
+  // =========================
+  // THUMB
+  // =========================
+  const thumbImage =
+    await manipulateAsync(
+
+      uri,
+
+      [
+        {
+          resize: {
+            width: 300,
+          },
+        },
+      ],
+
+      {
+
+        compress: 0.6,
+
+        format:
+          SaveFormat.WEBP,
+      }
+    );
+
+  const thumbUrl =
+    await uploadSingleImage(
+
+      thumbImage.uri,
+
+      `${folder}/thumb/${filename}.webp`
+    );
+
+  return {
+
+    original:
+      originalUrl,
+
+    medium:
+      mediumUrl,
+
+    thumb:
+      thumbUrl,
+  };
 }

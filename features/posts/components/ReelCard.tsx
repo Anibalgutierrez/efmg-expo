@@ -6,19 +6,19 @@ import {
 } from 'react-native';
 
 import {
-  Ionicons,
-} from '@expo/vector-icons';
+  memo,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 
 import {
   useRouter,
 } from 'expo-router';
 
 import {
-  useState,
-  memo,
-  useCallback,
-  useMemo,
-} from 'react';
+  Ionicons,
+} from '@expo/vector-icons';
 
 import {
   Image,
@@ -39,11 +39,17 @@ import IconButton
 import Divider
   from '../../../components/ui/Divider';
 
-import useLikePost
-  from '../hooks/useLikePost';
+import ConfirmModal
+  from './ConfirmModal';
 
 import CommentsModal
   from '../../comments/components/CommentsModal';
+
+import useTheme
+  from '../../../hooks/useTheme';
+
+import useLikePost
+  from '../hooks/useLikePost';
 
 import {
   useUserStore,
@@ -53,8 +59,9 @@ import {
   usePostsStore,
 } from '../../../store/usePostsStore';
 
-import useTheme
-  from '../../../hooks/useTheme';
+import {
+  deletePost,
+} from '../../../services/posts/delete-post.service';
 
 import {
   SPACING,
@@ -64,18 +71,11 @@ import {
   Post,
 } from '../../../types/post.types';
 
-import {
-  deletePost,
-} from '../../../services/posts/delete-post.service';
-
-import ConfirmModal
-  from './ConfirmModal';
-
 type Props = {
   post: Post;
 };
 
-function PostCard({
+function ReelCard({
   post,
 }: Props) {
 
@@ -120,9 +120,13 @@ function PostCard({
     likes,
     toggleLike,
   } = useLikePost(
+
     post.id,
+
     post.likesCount,
+
     user?.id,
+
     post.user.id
   );
 
@@ -138,7 +142,6 @@ function PostCard({
 
       try {
 
-        // Firestore Timestamp
         if (
           typeof (post.createdAt as any)
             ?.toDate === 'function'
@@ -151,7 +154,6 @@ function PostCard({
             .toLocaleString();
         }
 
-        // JS Date
         if (
           post.createdAt instanceof Date
         ) {
@@ -160,22 +162,21 @@ function PostCard({
             .toLocaleString();
         }
 
-        // string | number
-        const parsedDate =
+        const parsed =
           new Date(
             post.createdAt as any
           );
 
         if (
           isNaN(
-            parsedDate.getTime()
+            parsed.getTime()
           )
         ) {
 
           return '';
         }
 
-        return parsedDate
+        return parsed
           .toLocaleString();
 
       } catch {
@@ -188,58 +189,15 @@ function PostCard({
     ]);
 
   // =========================
-  // IMAGE
+  // THUMBNAIL
   // =========================
-  const postImage =
+  const thumbnail =
     useMemo(() => {
 
-      if (!post.image) {
-        return undefined;
-      }
-
-      if (
-        typeof post.image ===
-        'string'
-      ) {
-
-        return post.image;
-      }
-
-      return (
-        post.image.original ||
-        post.image.medium ||
-        post.image.thumb
-      );
+      return post.thumbnail || '';
 
     }, [
-      post.image,
-    ]);
-
-  // =========================
-  // HEIGHT
-  // =========================
-  const mediaHeight =
-    useMemo(() => {
-
-      return width > 500
-        ? (
-          post.type ===
-            'reel'
-
-            ? 520
-            : 360
-        )
-        : (
-          post.type ===
-            'reel'
-
-            ? 420
-            : 240
-        );
-
-    }, [
-      width,
-      post.type,
+      post.thumbnail,
     ]);
 
   // =========================
@@ -258,42 +216,6 @@ function PostCard({
       post.user.id,
       router,
     ]);
-
-  const openComments =
-    useCallback(() => {
-
-      setCommentsVisible(
-        true
-      );
-
-    }, []);
-
-  const closeComments =
-    useCallback(() => {
-
-      setCommentsVisible(
-        false
-      );
-
-    }, []);
-
-  const openDeleteModal =
-    useCallback(() => {
-
-      setDeleteVisible(
-        true
-      );
-
-    }, []);
-
-  const closeDeleteModal =
-    useCallback(() => {
-
-      setDeleteVisible(
-        false
-      );
-
-    }, []);
 
   const openReel =
     useCallback(() => {
@@ -315,9 +237,6 @@ function PostCard({
       router,
     ]);
 
-  // =========================
-  // DELETE
-  // =========================
   const handleDeletePost =
     useCallback(async () => {
 
@@ -390,7 +309,7 @@ function PostCard({
 
             <Avatar
               uri={
-                user?.avatar
+                post.user.avatar
               }
             />
 
@@ -437,17 +356,21 @@ function PostCard({
           {isOwner ? (
 
             <IconButton
-              icon="trash-outline"
+              icon=
+              "trash-outline"
 
-              onPress={
-                openDeleteModal
+              onPress={() =>
+                setDeleteVisible(
+                  true
+                )
               }
             />
 
           ) : (
 
             <IconButton
-              icon="ellipsis-horizontal"
+              icon=
+              "ellipsis-horizontal"
             />
 
           )}
@@ -475,144 +398,108 @@ function PostCard({
         )}
 
         {/* REEL */}
-        {post.type ===
-          'reel' && (
+        {!!thumbnail && (
 
-            <Pressable
-              onPress={
-                openReel
-              }
-            >
+          <Pressable
+            onPress={
+              openReel
+            }
+          >
 
-              <View>
+            <View>
 
-                <Image
-                  source={{
-                    uri:
-                      post.thumbnail,
-                  }}
+              <Image
+                source={{
+                  uri:
+                    thumbnail,
+                }}
 
-                  recyclingKey={
-                    post.id
-                  }
+                recyclingKey={
+                  post.id
+                }
 
-                  cachePolicy="memory-disk"
+                cachePolicy=
+                "memory-disk"
 
-                  contentFit="cover"
+                contentFit=
+                "cover"
 
-                  transition={120}
+                transition={200}
 
-                  style={{
+                style={{
 
-                    width: '100%',
+                  width: '100%',
 
-                    height:
-                      mediaHeight,
+                  height:
+                    width > 500
+                      ? 520
+                      : 420,
 
-                    borderRadius: 18,
+                  borderRadius: 18,
 
-                    marginBottom:
-                      SPACING.md,
-                  }}
+                  marginBottom:
+                    SPACING.md,
+                }}
 
-                  placeholder={require('../../../assets/placeholder.png')}
+                placeholder={require('../../../assets/placeholder.png')}
+              />
+
+              <View
+                style={{
+
+                  pointerEvents:
+                    'none',
+
+                  position:
+                    'absolute',
+
+                  top: '50%',
+
+                  left: '50%',
+
+                  transform: [
+                    {
+                      translateX:
+                        -40,
+                    },
+                    {
+                      translateY:
+                        -40,
+                    },
+                  ],
+
+                  backgroundColor:
+                    'rgba(0,0,0,0.5)',
+
+                  width: 80,
+
+                  height: 80,
+
+                  borderRadius: 40,
+
+                  justifyContent:
+                    'center',
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Ionicons
+                  name="play"
+
+                  size={44}
+
+                  color="white"
                 />
-
-                <View
-                  style={{
-
-                    pointerEvents:
-                      'none',
-
-                    position:
-                      'absolute',
-
-                    top: '50%',
-
-                    left: '50%',
-
-                    transform: [
-
-                      {
-                        translateX:
-                          -40,
-                      },
-
-                      {
-                        translateY:
-                          -40,
-                      },
-                    ],
-
-                    backgroundColor:
-                      'rgba(0,0,0,0.5)',
-
-                    width: 80,
-
-                    height: 80,
-
-                    borderRadius: 40,
-
-                    justifyContent:
-                      'center',
-
-                    alignItems:
-                      'center',
-                  }}
-                >
-
-                  <Ionicons
-                    name="play"
-                    size={44}
-                    color="white"
-                  />
-
-                </View>
 
               </View>
 
-            </Pressable>
+            </View>
 
-          )}
+          </Pressable>
 
-        {/* IMAGE */}
-        {post.type ===
-          'post' &&
-          !!postImage && (
-
-            <Image
-              source={{
-                uri:
-                  postImage,
-              }}
-
-              recyclingKey={
-                post.id
-              }
-
-              cachePolicy="memory-disk"
-
-              contentFit="cover"
-
-              transition={120}
-
-              style={{
-
-                width: '100%',
-
-                height:
-                  mediaHeight,
-
-                borderRadius: 18,
-
-                marginBottom:
-                  SPACING.md,
-              }}
-
-              placeholder={require('../../../assets/placeholder.png')}
-            />
-
-          )}
+        )}
 
         <Divider />
 
@@ -659,8 +546,10 @@ function PostCard({
           </Pressable>
 
           <Pressable
-            onPress={
-              openComments
+            onPress={() =>
+              setCommentsVisible(
+                true
+              )
             }
 
             style={{
@@ -683,23 +572,29 @@ function PostCard({
 
       </Card>
 
-      <CommentsModal
-        visible={
-          commentsVisible
-        }
+      {commentsVisible && (
 
-        onClose={
-          closeComments
-        }
+        <CommentsModal
+          visible={
+            commentsVisible
+          }
 
-        postId={
-          post.id
-        }
+          onClose={() =>
+            setCommentsVisible(
+              false
+            )
+          }
 
-        postOwnerId={
-          post.user.id
-        }
-      />
+          postId={
+            post.id
+          }
+
+          postOwnerId={
+            post.user.id
+          }
+        />
+
+      )}
 
       <ConfirmModal
         visible={
@@ -707,13 +602,15 @@ function PostCard({
         }
 
         title=
-        "Eliminar publicación"
+        "Eliminar reel"
 
         description=
         "Esta acción no se puede deshacer."
 
-        onCancel={
-          closeDeleteModal
+        onCancel={() =>
+          setDeleteVisible(
+            false
+          )
         }
 
         onConfirm={
@@ -722,50 +619,27 @@ function PostCard({
       />
 
     </>
+
   );
 }
 
 export default memo(
-  PostCard,
-  (prev, next) => {
+  ReelCard,
+  (prev, next) => (
 
-    const prevImage =
-      typeof prev.post.image ===
-        'string'
+    prev.post.id ===
+    next.post.id &&
 
-        ? prev.post.image
+    prev.post.likesCount ===
+    next.post.likesCount &&
 
-        : prev.post.image
-          ?.original;
+    prev.post.commentsCount ===
+    next.post.commentsCount &&
 
-    const nextImage =
-      typeof next.post.image ===
-        'string'
+    prev.post.content ===
+    next.post.content &&
 
-        ? next.post.image
-
-        : next.post.image
-          ?.original;
-
-    return (
-
-      prev.post.id ===
-      next.post.id &&
-
-      prev.post.likesCount ===
-      next.post.likesCount &&
-
-      prev.post.commentsCount ===
-      next.post.commentsCount &&
-
-      prev.post.content ===
-      next.post.content &&
-
-      prevImage ===
-      nextImage &&
-
-      prev.post.thumbnail ===
-      next.post.thumbnail
-    );
-  }
+    prev.post.thumbnail ===
+    next.post.thumbnail
+  )
 );

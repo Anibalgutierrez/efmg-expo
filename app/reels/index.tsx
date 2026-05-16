@@ -1,10 +1,19 @@
 import {
   Dimensions,
-  FlatList,
   Platform,
   View,
   Pressable,
+  StyleSheet,
+  FlatList,
 } from 'react-native';
+
+import {
+  memo,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   Ionicons,
@@ -19,27 +28,155 @@ import {
   useRouter,
 } from 'expo-router';
 
-import {
-  useRef,
-  useState,
-} from 'react';
-
-import Screen
-from '../../components/ui/Screen';
-
 import usePosts
-from '../../features/posts/hooks/usePosts';
+  from '../../features/posts/hooks/usePosts';
+
+import useVideoPrefetch
+  from '../../hooks/useVideoPrefetch';
 
 import {
   Post,
 } from '../../types/post.types';
 
 const {
-  height,
+  height: WINDOW_HEIGHT,
 } = Dimensions.get(
   'window'
 );
 
+// =========================
+// REEL PLAYER
+// =========================
+const ReelPlayer = memo(
+  ({
+    embedUrl,
+  }: {
+    embedUrl: string;
+  }) => {
+
+    if (
+      Platform.OS ===
+      'web'
+    ) {
+
+      return (
+
+        <iframe
+          src={embedUrl}
+
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+          }}
+
+          allow="autoplay; fullscreen"
+
+          allowFullScreen
+        />
+
+      );
+    }
+
+    return (
+
+      <WebView
+        source={{
+          uri: embedUrl,
+        }}
+
+        style={{
+          flex: 1,
+          backgroundColor:
+            'black',
+        }}
+
+        javaScriptEnabled
+
+        domStorageEnabled
+
+        allowsFullscreenVideo
+
+        mediaPlaybackRequiresUserAction={
+          false
+        }
+
+        scrollEnabled={
+          false
+        }
+
+        allowsInlineMediaPlayback
+      />
+
+    );
+  }
+);
+
+// =========================
+// REEL ITEM
+// =========================
+const ReelItem = memo(
+  ({
+    item,
+    isActive,
+  }: {
+    item: Post;
+    isActive: boolean;
+  }) => {
+
+    function getEmbedUrl(
+      url: string
+    ) {
+
+      const match =
+        url.match(
+          /(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/
+        );
+
+      if (!match) {
+        return '';
+      }
+
+      const videoId =
+        match[1];
+
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&playsinline=1&rel=0`;
+    }
+
+    const embedUrl =
+      isActive
+        ? getEmbedUrl(
+          item.reelUrl || ''
+        )
+        : 'about:blank';
+
+    return (
+
+      <View
+        style={{
+          width: '100%',
+          height:
+            WINDOW_HEIGHT,
+          backgroundColor:
+            'black',
+        }}
+      >
+
+        <ReelPlayer
+          embedUrl={
+            embedUrl
+          }
+        />
+
+      </View>
+
+    );
+  }
+);
+
+// =========================
+// SCREEN
+// =========================
 export default function ReelsScreen() {
 
   const router =
@@ -52,228 +189,294 @@ export default function ReelsScreen() {
     posts,
   } = usePosts();
 
+  // =========================
+  // FILTER REELS
+  // =========================
   const reels =
-    posts.filter(
-      (post) =>
-        post.type ===
-        'reel'
+    useMemo(
+      () =>
+
+        posts.filter(
+          (post) =>
+            post.type ===
+            'reel'
+        ),
+
+      [posts]
     );
 
+  // =========================
+  // PREFETCH
+  // =========================
+  const videoUrls =
+    reels
+      .map(
+        (reel) =>
+          reel.reelUrl
+      )
+      .filter(
+        Boolean
+      ) as string[];
+
+  useVideoPrefetch(
+    videoUrls
+  );
+
+  // =========================
+  // INITIAL INDEX
+  // =========================
   const reelId =
     typeof params.reelId ===
-    'string'
+      'string'
       ? params.reelId
       : '';
 
   const initialIndex =
-    reels.findIndex(
-      (reel) =>
-        reel.id ===
-        reelId
-    );
+    useMemo(() => {
 
+      const found =
+        reels.findIndex(
+          (reel) =>
+            reel.id ===
+            reelId
+        );
+
+      return found >= 0
+        ? found
+        : 0;
+
+    }, [
+      reelId,
+      reels,
+    ]);
+
+  // =========================
+  // ACTIVE INDEX
+  // =========================
   const [
     activeIndex,
     setActiveIndex,
   ] = useState(
-    initialIndex >= 0
-      ? initialIndex
-      : 0
+    initialIndex
   );
 
-  const onViewRef =
+  const listRef =
+    useRef<any>(
+      null
+    );
+
+  // =========================
+  // VIEWABILITY
+  // =========================
+  const onViewableItemsChanged =
     useRef(
       ({
         viewableItems,
       }: any) => {
 
         if (
-          viewableItems.length >
+          viewableItems?.length >
           0
         ) {
 
-          setActiveIndex(
+          const index =
             viewableItems[0]
-              .index
+              ?.index ?? 0;
+
+          setActiveIndex(
+            index
           );
         }
       }
-    );
+    ).current;
 
-  const viewConfigRef =
+  const viewabilityConfig =
     useRef({
+
       itemVisiblePercentThreshold:
         80,
-    });
 
-  function getEmbedUrl(
-    url: string
-  ) {
+    }).current;
 
-    const match =
-      url.match(
-        /(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/
-      );
+  // =========================
+  // RENDER ITEM
+  // =========================
+  const renderItem =
+    useCallback(
+      ({
+        item,
+        index,
+      }: {
+        item: Post;
+        index: number;
+      }) => (
 
-    if (!match) {
-      return url;
-    }
+        <ReelItem
+          item={item}
 
-    const videoId =
-      match[1];
+          isActive={
+            index ===
+            activeIndex
+          }
+        />
 
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&playsinline=1&rel=0`;
-  }
+      ),
 
-  function renderItem({
-    item,
-    index,
-  }: {
-    item: Post;
-    index: number;
-  }) {
-
-    if (!item.reelUrl) {
-      return null;
-    }
-
-    const isActive =
-      index ===
-      activeIndex;
-
-    const embedUrl =
-      isActive
-        ? getEmbedUrl(
-            item.reelUrl
-          )
-        : 'about:blank';
-
-    return (
-
-      <View
-        style={{
-          height,
-          backgroundColor:
-            'black',
-        }}
-      >
-
-        {Platform.OS ===
-        'web' ? (
-
-          <iframe
-            src={embedUrl}
-
-            style={{
-
-              width: '100%',
-
-              height: '100%',
-
-              border: 'none',
-            }}
-
-            allow="autoplay; fullscreen"
-
-            allowFullScreen
-          />
-
-        ) : (
-
-          <WebView
-            source={{
-              uri:
-                embedUrl,
-            }}
-
-            style={{
-              flex: 1,
-            }}
-
-            javaScriptEnabled
-
-            allowsFullscreenVideo
-          />
-
-        )}
-
-      </View>
+      [activeIndex]
     );
-  }
+
+  // =========================
+  // KEY
+  // =========================
+  const keyExtractor =
+    useCallback(
+      (
+        item: Post
+      ) => item.id,
+
+      []
+    );
 
   return (
 
-    <Screen>
+    <View
+      style={
+        styles.container
+      }
+    >
 
-  <FlatList
-    data={reels}
-    renderItem={renderItem}
-    keyExtractor={(item) => item.id}
-    pagingEnabled
-    showsVerticalScrollIndicator={false}
-    initialScrollIndex={
-      initialIndex >= 0
-        ? initialIndex
-        : 0
-    }
-    getItemLayout={(_, index) => ({
-      length: height,
-      offset: height * index,
-      index,
-    })}
-  />
+      <FlatList
+        ref={listRef}
 
-  <View
-    pointerEvents="box-none"
-    style={{
-      position: 'absolute',
+        data={reels}
+
+        renderItem={
+          renderItem
+        }
+
+        keyExtractor={
+          keyExtractor
+        }
+
+        pagingEnabled
+
+        showsVerticalScrollIndicator={
+          false
+        }
+
+        removeClippedSubviews={
+          false
+        }
+
+        initialScrollIndex={
+          initialIndex
+        }
+
+        onViewableItemsChanged={
+          onViewableItemsChanged
+        }
+
+        viewabilityConfig={
+          viewabilityConfig
+        }
+
+        windowSize={3}
+
+        maxToRenderPerBatch={2}
+
+        initialNumToRender={1}
+
+        getItemLayout={(
+          _,
+          index
+        ) => ({
+
+          length:
+            WINDOW_HEIGHT,
+
+          offset:
+            WINDOW_HEIGHT * index,
+
+          index,
+        })}
+      />
+
+      {/* BACK BUTTON */}
+      <View
+        style={{
+          ...styles.overlay,
+
+          pointerEvents:
+            'box-none',
+        }}
+      >
+
+        <Pressable
+          onPress={() =>
+            router.back()
+          }
+
+          hitSlop={30}
+
+          style={
+            styles.backButton
+          }
+        >
+
+          <Ionicons
+            name="arrow-back"
+
+            size={28}
+
+            color="white"
+          />
+
+        </Pressable>
+
+      </View>
+
+    </View>
+  );
+}
+
+const styles =
+  StyleSheet.create({
+
+    container: {
+      flex: 1,
+      backgroundColor:
+        'black',
+    },
+
+    overlay: {
+      position:
+        'absolute',
+
       top: 0,
       left: 0,
       right: 0,
-      zIndex: 999999,
-      elevation: 999999,
-    }}
-  >
 
-    <Pressable
-      onPress={() =>
-        router.replace(
-          '/(tabs)'
-        )
-      }
+      zIndex:
+        999,
+    },
 
-      hitSlop={30}
+    backButton: {
 
-      style={{
-        marginTop: 20,
-        marginLeft: 20,
+      marginTop: 20,
+      marginLeft: 20,
 
-        width: 56,
-        height: 56,
+      width: 56,
+      height: 56,
 
-        borderRadius: 999,
+      borderRadius: 999,
 
-        backgroundColor:
-          'rgba(0,0,0,0.7)',
+      backgroundColor:
+        'rgba(0,0,0,0.7)',
 
-        justifyContent:
-          'center',
+      justifyContent:
+        'center',
 
-        alignItems:
-          'center',
-      }}
-    >
-
-      <Ionicons
-        name="arrow-back"
-        size={28}
-        color="white"
-      />
-
-    </Pressable>
-
-  </View>
-
-</Screen>
-  );
-}
+      alignItems:
+        'center',
+    },
+  });

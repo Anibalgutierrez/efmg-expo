@@ -7,6 +7,9 @@ import {
   updateDoc,
   doc,
   getDocs,
+  where,
+  limit,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 import {
@@ -21,10 +24,10 @@ type CreateNotificationParams = {
 
   receiverId: string;
 
-type:
-  | 'like'
-  | 'comment'
-  | 'follow';
+  type:
+    | 'like'
+    | 'comment'
+    | 'follow';
 
   senderId: string;
 
@@ -36,6 +39,8 @@ type:
 
   text: string;
 };
+
+const NOTIFICATIONS_LIMIT = 50;
 
 export async function createNotification({
 
@@ -55,6 +60,9 @@ export async function createNotification({
 
 }: CreateNotificationParams) {
 
+  // =========================
+  // AVOID SELF NOTIFICATIONS
+  // =========================
   if (
     receiverId ===
     senderId
@@ -90,7 +98,7 @@ export async function createNotification({
       read: false,
 
       createdAt:
-        Date.now(),
+        serverTimestamp(),
     }
   );
 }
@@ -113,11 +121,16 @@ export function subscribeToNotifications(
     );
 
   const q = query(
+
     notificationsRef,
 
     orderBy(
       'createdAt',
       'desc'
+    ),
+
+    limit(
+      NOTIFICATIONS_LIMIT
     )
   );
 
@@ -128,7 +141,9 @@ export function subscribeToNotifications(
       const notifications =
         snapshot.docs.map(
           (doc) => ({
+
             id: doc.id,
+
             ...doc.data(),
           })
         ) as Notification[];
@@ -175,19 +190,23 @@ export async function markNotificationsAsRead(
       'notifications'
     );
 
-  const snapshot =
-    await getDocs(
-      notificationsRef
-    );
+  const q = query(
 
-  const unreadDocs =
-    snapshot.docs.filter(
-      (doc) =>
-        !doc.data().read
-    );
+    notificationsRef,
+
+    where(
+      'read',
+      '==',
+      false
+    )
+  );
+
+  const snapshot =
+    await getDocs(q);
 
   await Promise.all(
-    unreadDocs.map(
+
+    snapshot.docs.map(
       (
         notificationDoc
       ) =>

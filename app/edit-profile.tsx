@@ -39,8 +39,9 @@ import {
 import useTheme
 from '../hooks/useTheme';
 
-import useImagePicker
-from '../hooks/useImagePicker';
+import useImagePicker, {
+  PickedImage,
+} from '../hooks/useImagePicker';
 
 import {
   uploadImage,
@@ -82,12 +83,12 @@ export default function EditProfileScreen() {
     setLoading,
   ] = useState(false);
 
-  const [
-    avatar,
-    setAvatar,
-  ] = useState(
-    user?.avatar || ''
-  );
+const [
+  avatar,
+  setAvatar,
+] = useState<string>(
+  user?.avatar || ''
+);
 
   const [
     name,
@@ -105,12 +106,17 @@ export default function EditProfileScreen() {
 
   async function handlePickAvatar() {
 
-    const uri =
-      await pickImage();
+    const image:
+      PickedImage | null =
+        await pickImage();
 
-    if (!uri) return;
+    if (!image?.uri) {
+      return;
+    }
 
-    setAvatar(uri);
+    setAvatar(
+      image.uri
+    );
   }
 
   async function handleSave() {
@@ -129,11 +135,14 @@ export default function EditProfileScreen() {
         avatar !== user.avatar
       ) {
 
-        avatarUrl =
+        const uploadedAvatar =
           await uploadImage(
             avatar,
             'avatars'
           );
+
+        avatarUrl =
+          uploadedAvatar.original;
       }
 
       const updatedUser = {

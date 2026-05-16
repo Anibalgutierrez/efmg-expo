@@ -34,6 +34,9 @@ from '../../components/ui/AppText';
 import Loader
 from '../../components/ui/Loader';
 
+import EmptyState
+from '../../components/ui/EmptyState';
+
 import PostCard
 from '../../features/posts/components/PostCard';
 
@@ -107,16 +110,27 @@ export default function UserProfileScreen() {
 
   useEffect(() => {
 
-    if (!id) return;
+    if (!id) {
+
+      setLoadingUser(false);
+
+      return;
+    }
 
     async function loadUser() {
 
       try {
 
+        setLoadingUser(true);
+
         const data =
           await getUser(id);
 
         setUser(data);
+
+      } catch (error) {
+
+        console.log(error);
 
       } finally {
 
@@ -131,6 +145,7 @@ export default function UserProfileScreen() {
   if (loadingUser) {
 
     return (
+
       <Screen>
 
         <Header
@@ -149,6 +164,7 @@ export default function UserProfileScreen() {
   if (!user) {
 
     return (
+
       <Screen>
 
         <Header
@@ -160,9 +176,10 @@ export default function UserProfileScreen() {
 
         <Container>
 
-          <AppText>
-            Perfil no encontrado
-          </AppText>
+          <EmptyState
+            title=
+              "Perfil no encontrado"
+          />
 
         </Container>
 
@@ -204,9 +221,25 @@ export default function UserProfileScreen() {
           false
         }
 
+        removeClippedSubviews={false}
+
+        keyboardShouldPersistTaps="handled"
+
         contentContainerStyle={{
           paddingBottom: 140,
         }}
+
+        ListEmptyComponent={
+
+          <Container>
+
+            <EmptyState
+              title=
+                "Todavía no hay publicaciones."
+            />
+
+          </Container>
+        }
 
         ListHeaderComponent={
 
@@ -250,8 +283,12 @@ export default function UserProfileScreen() {
 
                 <AppText
                   style={{
+
                     marginTop:
                       SPACING.sm,
+
+                    textAlign:
+                      'center',
                   }}
                 >
                   {user.bio}
@@ -292,9 +329,7 @@ export default function UserProfileScreen() {
                       fontSize: 20,
                     }}
                   >
-                    {
-                      user.postsCount ?? 0
-                    }
+                    {posts.length}
                   </AppText>
 
                   <AppText>
@@ -375,15 +410,20 @@ export default function UserProfileScreen() {
 
                   <AppButton
                     title={
-                      following
-                        ? 'Siguiendo'
-                        : 'Seguir'
+                      loading
+                        ? 'Cargando...'
+                        : following
+                          ? 'Siguiendo'
+                          : 'Seguir'
+                    }
+
+                    disabled={
+                      loading
                     }
 
                     onPress={
                       toggleFollow
                     }
-
                   />
 
                 </View>
