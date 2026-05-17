@@ -6,6 +6,8 @@ import {
   Ionicons,
 } from '@expo/vector-icons';
 
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+
 import useTheme
 from '../../hooks/useTheme';
 
@@ -150,6 +152,28 @@ export default function TabsLayout() {
 
             <Ionicons
               name="football"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* PREDIO */}
+      <Tabs.Screen
+        name="predio"
+
+        options={{
+
+          title: 'Predio',
+
+          tabBarIcon: ({
+            color,
+            size,
+          }) => (
+
+            <MaterialCommunityIcons
+              name="soccer-field"
               size={size}
               color={color}
             />
