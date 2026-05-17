@@ -139,25 +139,35 @@ export default function TabsLayout() {
 
       {/* MATCHES */}
       <Tabs.Screen
-        name="matches"
+  name="matches/index"
 
-        options={{
+  options={{
 
-          title: 'Partidos',
+    title: 'Partidos',
 
-          tabBarIcon: ({
-            color,
-            size,
-          }) => (
+    headerShown: false,
 
-            <Ionicons
-              name="football"
-              size={size}
-              color={color}
-            />
-          ),
-        }}
+    tabBarIcon: ({
+      color,
+      size,
+    }) => (
+
+      <Ionicons
+        name="football"
+        size={size}
+        color={color}
       />
+
+    ),
+  }}
+/>
+
+<Tabs.Screen
+  name="matches/[matchId]"
+  options={{
+    href: null,
+  }}
+/>
 
       {/* PREDIO */}
       <Tabs.Screen
