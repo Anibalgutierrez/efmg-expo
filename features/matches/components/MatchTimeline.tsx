@@ -1,14 +1,15 @@
 import {
-  memo,
-} from 'react';
-
-import {
+  Image,
   Text,
   View,
 } from 'react-native';
 
 import useTheme
 from '../../../hooks/useTheme';
+
+import {
+  Match,
+} from '../types/match.types';
 
 import {
   MatchEvent,
@@ -27,107 +28,112 @@ import {
 } from '../../../theme/radius';
 
 type Props = {
-  events: MatchEvent[];
+  events?: MatchEvent[];
+
+  match?: Match | null;
 };
 
-function MatchTimeline({
-  events,
+export default function MatchTimeline({
+  events = [],
+  match = null,
 }: Props) {
 
   const {
     COLORS,
   } = useTheme();
 
-  const getEventIcon =
-    (
-      type: MatchEvent['type'],
-    ) => {
+  function getEventIcon(
+    type: MatchEvent['type'],
+  ) {
 
-      switch (
-        type
-      ) {
+    switch (
+      type
+    ) {
 
-        case 'goal':
-          return '⚽';
+      case 'goal':
+        return '⚽';
 
-        case 'yellow_card':
-          return '🟨';
+      case 'yellow_card':
+        return '🟨';
 
-        case 'red_card':
-          return '🟥';
+      case 'red_card':
+        return '🟥';
 
-        case 'substitution':
-          return '🔄';
+      case 'substitution':
+        return '🔄';
 
-        case 'halftime':
-          return '⏸';
+      case 'halftime':
+        return '⏸';
 
-        case 'match_started':
-          return '🟢';
+      case 'match_started':
+        return '🟢';
 
-        case 'match_finished':
-          return '🏁';
+      case 'match_finished':
+        return '🏁';
 
-        default:
-          return '•';
-      }
-    };
+      default:
+        return '•';
+    }
+  }
 
-  const getEventLabel =
-    (
-      event: MatchEvent,
-    ) => {
+  function getEventLabel(
+    event: MatchEvent,
+  ) {
 
-      switch (
-        event.type
-      ) {
+    switch (
+      event.type
+    ) {
 
-        case 'goal':
-          return event.player?.name
-            || 'Gol';
+      case 'goal':
+        return event.player?.name
+          || 'Gol';
 
-        case 'yellow_card':
-          return event.player?.name
-            || 'Tarjeta amarilla';
+      case 'yellow_card':
+        return event.player?.name
+          || 'Tarjeta amarilla';
 
-        case 'red_card':
-          return event.player?.name
-            || 'Tarjeta roja';
+      case 'red_card':
+        return event.player?.name
+          || 'Tarjeta roja';
 
-        case 'substitution':
-          return event.player?.name
-            || 'Cambio';
+      case 'substitution':
+        return event.player?.name
+          || 'Cambio';
 
-        case 'halftime':
-          return 'Descanso';
+      case 'halftime':
+        return 'ENTRETIEMPO';
 
-        case 'match_started':
-          return 'Comenzó el partido';
+      case 'match_started':
+        return 'COMENZÓ EL PARTIDO';
 
-        case 'match_finished':
-          return 'Final del partido';
+      case 'match_finished':
+        return 'FINAL DEL PARTIDO';
 
-        default:
-          return 'Evento';
-      }
-    };
+      default:
+        return 'Evento';
+    }
+  }
 
-  const isCenterEvent =
-    (
-      type: MatchEvent['type'],
-    ) => {
+  function isCenterEvent(
+    type: MatchEvent['type'],
+  ) {
 
-      return (
-        type ===
-          'match_started' ||
+    return (
 
-        type ===
-          'halftime' ||
+      type ===
+        'match_started'
 
-        type ===
-          'match_finished'
-      );
-    };
+      ||
+
+      type ===
+        'halftime'
+
+      ||
+
+      type ===
+        'match_finished'
+    );
+  }
 
   if (
     events.length === 0
@@ -169,12 +175,29 @@ function MatchTimeline({
             event.teamSide ===
             'home';
 
+          const rawLogo =
+
+  isHome
+
+    ? match?.homeTeam?.logo
+
+    : match?.awayTeam?.logo;
+
+const teamLogo =
+
+  typeof rawLogo === 'string' &&
+  rawLogo.trim().length > 0
+
+    ? rawLogo
+
+    : null;
+
           return (
 
             <View
-              key={
-                event.id
-              }
+             key={
+  event.id || `${event.type}-${event.minute}`
+}
             >
 
               {/* CENTER EVENTS */}
@@ -233,7 +256,7 @@ function MatchTimeline({
                             COLORS.text,
 
                           fontWeight:
-                            '700',
+                            '800',
 
                           fontSize:
                             TYPOGRAPHY.caption,
@@ -242,22 +265,6 @@ function MatchTimeline({
                         {getEventLabel(
                           event,
                         )}
-                      </Text>
-
-                      <Text
-                        style={{
-
-                          color:
-                            COLORS.textSecondary,
-
-                          fontWeight:
-                            '700',
-
-                          fontSize:
-                            TYPOGRAPHY.caption,
-                        }}
-                      >
-                        {event.minute}'
                       </Text>
 
                     </View>
@@ -319,6 +326,7 @@ function MatchTimeline({
                             : 0,
 
                         borderColor:
+
                           event.type ===
                           'goal'
 
@@ -327,9 +335,9 @@ function MatchTimeline({
                             : event.type ===
                               'red_card'
 
-                            ? COLORS.danger
+                              ? COLORS.danger
 
-                            : COLORS.primary,
+                              : COLORS.primary,
                       }}
                     >
 
@@ -345,6 +353,68 @@ function MatchTimeline({
                           flex: 1,
                         }}
                       >
+
+                        {
+                          teamLogo ? (
+
+                            <Image
+                              source={{
+                                uri:
+                                  teamLogo,
+                              }}
+                              style={{
+
+                                width: 28,
+
+                                height: 28,
+
+                                borderRadius: 14,
+
+                                marginRight:
+                                  SPACING.sm,
+                              }}
+                            />
+
+                          ) : (
+
+                            <View
+                              style={{
+
+                                width: 28,
+
+                                height: 28,
+
+                                borderRadius: 14,
+
+                                marginRight:
+                                  SPACING.sm,
+
+                                backgroundColor:
+                                  COLORS.surface,
+
+                                alignItems:
+                                  'center',
+
+                                justifyContent:
+                                  'center',
+                              }}
+                            >
+
+                              <Text
+                                style={{
+                                  fontSize: 14,
+                                }}
+                              >
+                                {
+                                  isHome
+                                    ? '🏠'
+                                    : '✈️'
+                                }
+                              </Text>
+
+                            </View>
+                          )
+                        }
 
                         <Text
                           style={{
@@ -441,7 +511,3 @@ function MatchTimeline({
     </View>
   );
 }
-
-export default memo(
-  MatchTimeline,
-);

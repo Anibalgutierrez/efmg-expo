@@ -1,15 +1,17 @@
 import {
-  addDoc,
-  collection,
   doc,
   increment,
   serverTimestamp,
-  writeBatch,
+  updateDoc,
 } from 'firebase/firestore';
 
 import {
   db,
 } from '../../../firebase/config';
+
+import {
+  createMatchEventService,
+} from './create-match-event.service';
 
 type Params = {
 
@@ -25,6 +27,8 @@ type Params = {
 
     name: string;
   };
+
+  teamId: string;
 };
 
 export async function addGoalEventService({
@@ -32,12 +36,8 @@ export async function addGoalEventService({
   side,
   minute,
   player,
+  teamId,
 }: Params) {
-
-  const batch =
-    writeBatch(
-      db,
-    );
 
   const matchRef =
     doc(
@@ -46,17 +46,10 @@ export async function addGoalEventService({
       matchId,
     );
 
-  const eventsRef =
-    collection(
-      db,
-      'matches',
-      matchId,
-      'events',
-    );
-
   /* UPDATE SCORE */
 
-  batch.update(
+  await updateDoc(
+
     matchRef,
 
     {
@@ -84,29 +77,25 @@ export async function addGoalEventService({
 
   /* CREATE EVENT */
 
-  const eventRef =
-    doc(
-      eventsRef,
-    );
+  await createMatchEventService({
 
-  batch.set(
-    eventRef,
+    matchId,
 
-    {
+    event: {
 
       type: 'goal',
 
       minute,
 
-      side,
+      matchId,
+
+      teamId,
+
+      teamSide:
+        side,
 
       player:
-        player || null,
-
-      createdAt:
-        serverTimestamp(),
+        player || undefined,
     },
-  );
-
-  await batch.commit();
+  });
 }

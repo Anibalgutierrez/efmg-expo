@@ -4,6 +4,7 @@ import {
 } from 'react';
 
 import {
+  Pressable,
   ScrollView,
   Text,
   View,
@@ -11,6 +12,7 @@ import {
 
 import {
   useLocalSearchParams,
+  useRouter,
 } from 'expo-router';
 
 import Screen
@@ -18,6 +20,12 @@ from '../../../components/ui/Screen';
 
 import useTheme
 from '../../../hooks/useTheme';
+
+import useCanControlMatches
+from '../../../hooks/useCanControlMatches';
+
+import MatchTimeline
+from '../../../features/matches/components/MatchTimeline';
 
 import {
   Match,
@@ -35,12 +43,6 @@ import {
   subscribeMatchEventsService,
 } from '../../../features/matches/services/subscribe-match-events.service';
 
-import MatchTimeline
-from '../../../features/matches/components/MatchTimeline';
-
-import useMatchClock
-from '../../../features/matches/hooks/useMatchClock';
-
 import {
   SPACING,
 } from '../../../theme/spacing';
@@ -55,6 +57,9 @@ import {
 
 export default function MatchDetailsScreen() {
 
+  const router =
+    useRouter();
+
   const {
     matchId,
   } = useLocalSearchParams();
@@ -63,17 +68,15 @@ export default function MatchDetailsScreen() {
     COLORS,
   } = useTheme();
 
+  const canControlMatches =
+    useCanControlMatches();
+
   const [
     match,
     setMatch,
   ] = useState<Match | null>(
     null,
   );
-
-  const liveMinute =
-    useMatchClock(
-      match,
-    );
 
   const [
     events,
@@ -89,23 +92,36 @@ export default function MatchDetailsScreen() {
     true,
   );
 
-  /* MATCH REALTIME */
-
   useEffect(
     () => {
 
-      const unsubscribe =
+      if (
+        !matchId
+      ) {
+        return;
+      }
+
+      const unsubscribeMatch =
         subscribeMatchService(
-
-          String(
-            matchId,
-          ),
-
+          String(matchId),
           (
             data,
           ) => {
 
             setMatch(
+              data,
+            );
+          },
+        );
+
+      const unsubscribeEvents =
+        subscribeMatchEventsService(
+          String(matchId),
+          (
+            data,
+          ) => {
+
+            setEvents(
               data,
             );
 
@@ -115,39 +131,11 @@ export default function MatchDetailsScreen() {
           },
         );
 
-      return () =>
-        unsubscribe();
-    },
+      return () => {
 
-    [
-      matchId,
-    ],
-  );
-
-  /* EVENTS REALTIME */
-
-  useEffect(
-    () => {
-
-      const unsubscribe =
-        subscribeMatchEventsService(
-
-          String(
-            matchId,
-          ),
-
-          (
-            data,
-          ) => {
-
-            setEvents(
-              data,
-            );
-          },
-        );
-
-      return () =>
-        unsubscribe();
+        unsubscribeMatch();
+        unsubscribeEvents();
+      };
     },
 
     [
@@ -182,7 +170,7 @@ export default function MatchDetailsScreen() {
                 COLORS.textSecondary,
             }}
           >
-            Cargando...
+            Cargando partido...
           </Text>
 
         </View>
@@ -215,10 +203,10 @@ export default function MatchDetailsScreen() {
           <Text
             style={{
               color:
-                COLORS.textSecondary,
+                COLORS.text,
             }}
           >
-            Partido no encontrado
+            Partido no encontrado.
           </Text>
 
         </View>
@@ -232,240 +220,16 @@ export default function MatchDetailsScreen() {
     <Screen>
 
       <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
+        contentContainerStyle={{
+          padding:
+            SPACING.md,
+        }}
       >
 
-        {/* SCOREBOARD */}
-
         <View
           style={{
-
-            backgroundColor:
-              COLORS.surface,
-
-            margin:
-              SPACING.md,
-
-            borderRadius:
-              RADIUS.lg,
-
-            padding:
-              SPACING.lg,
-          }}
-        >
-
-          <Text
-            style={{
-
-              color:
-                COLORS.textSecondary,
-
-              marginBottom:
-                SPACING.sm,
-
-              fontSize:
-                TYPOGRAPHY.caption,
-            }}
-          >
-            {match.category?.name ||
-              'Sin categoría'}
-          </Text>
-
-          <View
-            style={{
-              gap:
-                SPACING.md,
-            }}
-          >
-
-            {/* HOME */}
-
-            <View
-              style={{
-
-                flexDirection:
-                  'row',
-
-                justifyContent:
-                  'space-between',
-
-                alignItems:
-                  'center',
-              }}
-            >
-
-              <Text
-                style={{
-
-                  color:
-                    COLORS.text,
-
-                  fontSize:
-                    TYPOGRAPHY.body,
-
-                  fontWeight:
-                    '700',
-
-                  flex: 1,
-                }}
-              >
-                {match.homeTeam?.name ||
-                  'Local'}
-              </Text>
-
-              <Text
-                style={{
-
-                  color:
-                    COLORS.text,
-
-                  fontSize: 42,
-
-                  fontWeight:
-                    '800',
-                }}
-              >
-                {match.scoreHome}
-              </Text>
-
-            </View>
-
-            {/* AWAY */}
-
-            <View
-              style={{
-
-                flexDirection:
-                  'row',
-
-                justifyContent:
-                  'space-between',
-
-                alignItems:
-                  'center',
-              }}
-            >
-
-              <Text
-                style={{
-
-                  color:
-                    COLORS.text,
-
-                  fontSize:
-                    TYPOGRAPHY.body,
-
-                  fontWeight:
-                    '700',
-
-                  flex: 1,
-                }}
-              >
-                {match.awayTeam?.name ||
-                  'Visitante'}
-              </Text>
-
-              <Text
-                style={{
-
-                  color:
-                    COLORS.text,
-
-                  fontSize: 42,
-
-                  fontWeight:
-                    '800',
-                }}
-              >
-                {match.scoreAway}
-              </Text>
-
-            </View>
-
-          </View>
-
-          {/* STATUS */}
-
-          <View
-            style={{
-              marginTop:
-                SPACING.lg,
-            }}
-          >
-
-            <Text
-              style={{
-
-                color:
-                  match.status ===
-                  'live'
-                    ? COLORS.success
-                    : COLORS.textSecondary,
-
-                fontWeight:
-                  '700',
-
-                fontSize:
-                  TYPOGRAPHY.body,
-              }}
-            >
-
-              {match.status ===
-              'live'
-
-                ? `🟢 EN VIVO ${liveMinute}'`
-
-                : match.status ===
-                  'halftime'
-
-                ? '⏸ DESCANSO'
-
-                : match.status ===
-                  'finished'
-
-                ? 'FINAL'
-
-                : 'PROGRAMADO'}
-            </Text>
-
-            <Text
-              style={{
-
-                color:
-                  COLORS.textSecondary,
-
-                marginTop:
-                  SPACING.sm,
-              }}
-            >
-              {match.venue}
-            </Text>
-
-          </View>
-
-        </View>
-
-        {/* TIMELINE */}
-
-        <View
-          style={{
-
-            backgroundColor:
-              COLORS.surface,
-
-            marginHorizontal:
-              SPACING.md,
-
-            borderRadius:
-              RADIUS.lg,
-
-            padding:
-              SPACING.md,
-
             marginBottom:
-              SPACING.xxl,
+              SPACING.lg,
           }}
         >
 
@@ -475,24 +239,100 @@ export default function MatchDetailsScreen() {
               color:
                 COLORS.text,
 
-              fontWeight:
-                '700',
-
-              marginBottom:
-                SPACING.md,
-
               fontSize:
-                TYPOGRAPHY.body,
+                TYPOGRAPHY.title,
+
+              fontWeight:
+                '800',
+
+              textAlign:
+                'center',
             }}
           >
-            Timeline
+            {match.homeTeam.name}
+            {' - '}
+            {match.awayTeam.name}
           </Text>
 
-          <MatchTimeline
-            events={events}
-          />
+          <Text
+            style={{
+
+              color:
+                COLORS.text,
+
+              fontSize: 42,
+
+              fontWeight:
+                '900',
+
+              textAlign:
+                'center',
+
+              marginVertical:
+                SPACING.sm,
+            }}
+          >
+            {match.scoreHome}
+            {'    -    '}
+            {match.scoreAway}
+          </Text>
 
         </View>
+
+        {
+          canControlMatches && (
+
+            <Pressable
+
+              onPress={() =>
+                router.push(
+                  `/match-control/${match.id}`,
+                )
+              }
+
+              style={{
+
+                backgroundColor:
+                  COLORS.primary,
+
+                padding:
+                  SPACING.md,
+
+                borderRadius:
+                  RADIUS.lg,
+
+                alignItems:
+                  'center',
+
+                marginBottom:
+                  SPACING.lg,
+              }}
+            >
+
+              <Text
+                style={{
+
+                  color:
+                    COLORS.buttonText,
+
+                  fontWeight:
+                    '800',
+
+                  fontSize:
+                    TYPOGRAPHY.body,
+                }}
+              >
+                Ir a controles
+              </Text>
+
+            </Pressable>
+          )
+        }
+
+        <MatchTimeline
+          events={events}
+          match={match}
+        />
 
       </ScrollView>
 

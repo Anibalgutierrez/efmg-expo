@@ -5,6 +5,7 @@ export type MatchEventType =
   | 'substitution'
   | 'match_started'
   | 'halftime'
+  | 'second_half_started'
   | 'match_finished';
 
 export interface MatchEvent {
@@ -17,7 +18,7 @@ export interface MatchEvent {
 
   matchId: string;
 
-  teamId: string;
+  teamId?: string;
 
   teamSide?: 'home' | 'away';
 
@@ -36,6 +37,11 @@ export interface MatchEvent {
   };
 
   description?: string;
+
+  metadata?: Record<
+    string,
+    any
+  >;
 
   createdAt: any;
 }

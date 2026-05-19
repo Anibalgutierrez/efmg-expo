@@ -4,6 +4,7 @@ import {
 } from 'react';
 
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -11,17 +12,25 @@ import {
 } from 'react-native';
 
 import {
+  router,
   useLocalSearchParams,
 } from 'expo-router';
 
 import Screen
-from '../../components/ui/Screen';
+  from '../../components/ui/Screen';
+
+import Header
+  from '../../components/ui/Header';
 
 import useTheme
-from '../../hooks/useTheme';
+  from '../../hooks/useTheme';
+
+import useCanControlMatches
+  from '../../hooks/useCanControlMatches';
 
 import {
   Match,
+  MatchPlayer,
 } from '../../features/matches/types/match.types';
 
 import {
@@ -29,23 +38,34 @@ import {
 } from '../../features/matches/services/subscribe-match.service';
 
 import {
-  addGoalEventService,
-} from '../../features/matches/services/add-goal-event.service';
-
-import {
   startMatchService,
 } from '../../features/matches/services/start-match.service';
+
+import {
+  finishMatchService,
+} from '../../features/matches/services/finish-match.service';
 
 import {
   halftimeMatchService,
 } from '../../features/matches/services/halftime-match.service';
 
 import {
-  finishMatchService,
-} from '../../features/matches/services/finish-match.service';
+  addGoalEventService,
+} from '../../features/matches/services/add-goal-event.service';
+
+import {
+  addCardEventService,
+} from '../../features/matches/services/add-card-event.service';
 
 import useMatchClock
-from '../../features/matches/hooks/useMatchClock';
+  from '../../features/matches/hooks/useMatchClock';
+
+import PlayerSelectModal
+  from '../../features/matches/components/PlayerSelectModal';
+
+import {
+  resumeMatchService,
+} from '../../features/matches/services/resume-match.service';
 
 import {
   SPACING,
@@ -69,17 +89,15 @@ export default function MatchControlScreen() {
     COLORS,
   } = useTheme();
 
+  const canControlMatches =
+    useCanControlMatches();
+
   const [
     match,
     setMatch,
   ] = useState<Match | null>(
     null,
   );
-
-  const liveMinute =
-    useMatchClock(
-      match,
-    );
 
   const [
     loading,
@@ -89,11 +107,107 @@ export default function MatchControlScreen() {
   );
 
   const [
-    actionLoading,
-    setActionLoading,
+    goalModalVisible,
+    setGoalModalVisible,
   ] = useState(
     false,
   );
+
+  const [
+    awayGoalModalVisible,
+    setAwayGoalModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    yellowModalVisible,
+    setYellowModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    awayYellowModalVisible,
+    setAwayYellowModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    redModalVisible,
+    setRedModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    awayRedModalVisible,
+    setAwayRedModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const liveMinute =
+    useMatchClock(
+      match,
+    );
+
+  const homePlayers =
+    match?.homeTeam.players?.length
+
+      ? match.homeTeam.players
+
+      : [
+
+          {
+
+            id:
+              'home-player',
+
+            name:
+              'Jugador Local',
+          },
+        ];
+
+  const awayPlayers =
+    match?.awayTeam.players?.length
+
+      ? match.awayTeam.players
+
+      : [
+
+          {
+
+            id:
+              'rival-player',
+
+            name:
+              'Jugador Rival',
+          },
+        ];
+
+  /* PERMISSIONS */
+
+  useEffect(
+    () => {
+
+      if (
+        !canControlMatches
+      ) {
+
+        router.replace(
+          '/matches',
+        );
+      }
+    },
+
+    [
+      canControlMatches,
+    ],
+  );
+
+  /* MATCH REALTIME */
 
   useEffect(
     () => {
@@ -128,65 +242,22 @@ export default function MatchControlScreen() {
     ],
   );
 
-  async function handleGoal(
-    side: 'home' | 'away',
+  if (
+    !canControlMatches
   ) {
 
-    if (
-      !match ||
-      actionLoading
-    ) {
-      return;
-    }
-
-    try {
-
-      setActionLoading(
-        true,
-      );
-
-      await addGoalEventService({
-
-        matchId:
-          match.id,
-
-        side,
-
-        minute:
-          liveMinute,
-      });
-
-    } catch (
-      error
-    ) {
-
-      console.log(
-        'handleGoal error:',
-        error,
-      );
-
-    } finally {
-
-      setActionLoading(
-        false,
-      );
-    }
+    return null;
   }
 
   async function handleStartMatch() {
 
     if (
-      !match ||
-      actionLoading
+      !match
     ) {
       return;
     }
 
     try {
-
-      setActionLoading(
-        true,
-      );
 
       await startMatchService({
 
@@ -203,10 +274,68 @@ export default function MatchControlScreen() {
         error,
       );
 
-    } finally {
+      Alert.alert(
+        'Error',
+        'No se pudo iniciar el partido.',
+      );
+    }
+  }
 
-      setActionLoading(
-        false,
+  async function handleResumeMatch() {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await resumeMatchService({
+
+        matchId:
+          match.id,
+      });
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleResumeMatch error:',
+        error,
+      );
+    }
+  }
+
+  async function handleFinishMatch() {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await finishMatchService({
+
+        matchId:
+          match.id,
+      });
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleFinishMatch error:',
+        error,
+      );
+
+      Alert.alert(
+        'Error',
+        'No se pudo finalizar el partido.',
       );
     }
   }
@@ -214,17 +343,12 @@ export default function MatchControlScreen() {
   async function handleHalftime() {
 
     if (
-      !match ||
-      actionLoading
+      !match
     ) {
       return;
     }
 
     try {
-
-      setActionLoading(
-        true,
-      );
 
       await halftimeMatchService({
 
@@ -243,49 +367,288 @@ export default function MatchControlScreen() {
         'handleHalftime error:',
         error,
       );
-
-    } finally {
-
-      setActionLoading(
-        false,
-      );
     }
   }
 
-  async function handleFinishMatch() {
+  async function handleHomeGoal(
+    player: MatchPlayer,
+  ) {
 
     if (
-      !match ||
-      actionLoading
+      !match
     ) {
       return;
     }
 
     try {
 
-      setActionLoading(
-        true,
-      );
-
-      await finishMatchService({
+      await addGoalEventService({
 
         matchId:
-          match.id,
+          String(
+            matchId,
+          ),
+
+        side:
+          'home',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.homeTeam.id,
+
+        player,
       });
+
+      setGoalModalVisible(
+        false,
+      );
 
     } catch (
       error
     ) {
 
       console.log(
-        'handleFinishMatch error:',
+        'handleHomeGoal error:',
         error,
       );
 
-    } finally {
+      Alert.alert(
+        'Error',
+        'No se pudo registrar el gol.',
+      );
+    }
+  }
 
-      setActionLoading(
+  async function handleAwayGoal(
+    player: MatchPlayer,
+  ) {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await addGoalEventService({
+
+        matchId:
+          match.id,
+
+        side:
+          'away',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.awayTeam.id,
+
+        player,
+      });
+
+      setAwayGoalModalVisible(
         false,
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleAwayGoal error:',
+        error,
+      );
+    }
+  }
+
+  async function handleYellowCard(
+    player: MatchPlayer,
+  ) {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await addCardEventService({
+
+        matchId:
+          match.id,
+
+        type:
+          'yellow_card',
+
+        side:
+          'home',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.homeTeam.id,
+
+        player,
+      });
+
+      setYellowModalVisible(
+        false,
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleYellowCard error:',
+        error,
+      );
+    }
+  }
+
+  async function handleAwayYellowCard(
+    player: MatchPlayer,
+  ) {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await addCardEventService({
+
+        matchId:
+          match.id,
+
+        type:
+          'yellow_card',
+
+        side:
+          'away',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.awayTeam.id,
+
+        player,
+      });
+
+      setAwayYellowModalVisible(
+        false,
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleAwayYellowCard error:',
+        error,
+      );
+    }
+  }
+
+  async function handleRedCard(
+    player: MatchPlayer,
+  ) {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await addCardEventService({
+
+        matchId:
+          match.id,
+
+        type:
+          'red_card',
+
+        side:
+          'home',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.homeTeam.id,
+
+        player,
+      });
+
+      setRedModalVisible(
+        false,
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleRedCard error:',
+        error,
+      );
+    }
+  }
+
+  async function handleAwayRedCard(
+    player: MatchPlayer,
+  ) {
+
+    if (
+      !match
+    ) {
+      return;
+    }
+
+    try {
+
+      await addCardEventService({
+
+        matchId:
+          match.id,
+
+        type:
+          'red_card',
+
+        side:
+          'away',
+
+        minute:
+          liveMinute,
+
+        teamId:
+          match.awayTeam.id,
+
+        player,
+      });
+
+      setAwayRedModalVisible(
+        false,
+      );
+
+    } catch (
+      error
+    ) {
+
+      console.log(
+        'handleAwayRedCard error:',
+        error,
       );
     }
   }
@@ -297,6 +660,14 @@ export default function MatchControlScreen() {
     return (
 
       <Screen>
+
+        <Header
+          title="Control de Partido"
+
+          onBack={() =>
+            router.back()
+          }
+        />
 
         <View
           style={{
@@ -334,6 +705,14 @@ export default function MatchControlScreen() {
 
       <Screen>
 
+        <Header
+          title="Control de Partido"
+
+          onBack={() =>
+            router.back()
+          }
+        />
+
         <View
           style={{
 
@@ -366,22 +745,33 @@ export default function MatchControlScreen() {
 
     <Screen>
 
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-      >
+      <Header
+        title="Control de Partido"
 
-        {/* SCOREBOARD */}
+        onBack={() =>
+          router.back()
+        }
+      />
+
+      <ScrollView
+        contentContainerStyle={{
+
+          padding:
+            SPACING.md,
+
+          paddingBottom:
+            SPACING.xxl,
+
+          gap:
+            SPACING.lg,
+        }}
+      >
 
         <View
           style={{
 
             backgroundColor:
               COLORS.surface,
-
-            margin:
-              SPACING.md,
 
             borderRadius:
               RADIUS.lg,
@@ -398,14 +788,10 @@ export default function MatchControlScreen() {
                 COLORS.textSecondary,
 
               marginBottom:
-                SPACING.sm,
-
-              fontSize:
-                TYPOGRAPHY.caption,
+                SPACING.md,
             }}
           >
-            {match.category?.name ||
-              'Sin categoría'}
+            {match.category?.name}
           </Text>
 
           <View
@@ -414,8 +800,6 @@ export default function MatchControlScreen() {
                 SPACING.md,
             }}
           >
-
-            {/* HOME */}
 
             <View
               style={{
@@ -442,12 +826,9 @@ export default function MatchControlScreen() {
 
                   fontWeight:
                     '700',
-
-                  flex: 1,
                 }}
               >
-                {match.homeTeam?.name ||
-                  'Local'}
+                {match.homeTeam.name}
               </Text>
 
               <Text
@@ -467,8 +848,6 @@ export default function MatchControlScreen() {
 
             </View>
 
-            {/* AWAY */}
-
             <View
               style={{
 
@@ -494,12 +873,9 @@ export default function MatchControlScreen() {
 
                   fontWeight:
                     '700',
-
-                  flex: 1,
                 }}
               >
-                {match.awayTeam?.name ||
-                  'Visitante'}
+                {match.awayTeam.name}
               </Text>
 
               <Text
@@ -521,149 +897,118 @@ export default function MatchControlScreen() {
 
           </View>
 
-          {/* STATUS */}
-
-          <View
+          <Text
             style={{
+
+              color:
+                match.status ===
+                  'live'
+                  ? COLORS.success
+                  : COLORS.textSecondary,
+
               marginTop:
                 SPACING.lg,
+
+              fontWeight:
+                '800',
+
+              fontSize:
+                TYPOGRAPHY.body,
             }}
           >
 
-            <Text
-              style={{
-
-                color:
-                  match.status ===
-                  'live'
-                    ? COLORS.success
-                    : COLORS.textSecondary,
-
-                fontWeight:
-                  '700',
-
-                fontSize:
-                  TYPOGRAPHY.body,
-              }}
-            >
-
-              {match.status ===
-              'live'
+            {
+              match.status ===
+                'live'
 
                 ? `🟢 EN VIVO ${liveMinute}'`
 
                 : match.status ===
                   'halftime'
 
-                ? '⏸ DESCANSO'
+                  ? '⏸ ENTRETIEMPO'
 
-                : match.status ===
-                  'finished'
+                  : match.status ===
+                    'finished'
 
-                ? 'FINAL'
+                    ? 'FINAL'
 
-                : 'PROGRAMADO'}
-            </Text>
+                    : 'PROGRAMADO'
+            }
 
-            <Text
-              style={{
-
-                color:
-                  COLORS.textSecondary,
-
-                marginTop:
-                  SPACING.sm,
-              }}
-            >
-              {match.venue}
-            </Text>
-
-          </View>
+          </Text>
 
         </View>
 
-        {/* CONTROLS */}
+        {
+          match.status ===
+          'scheduled' && (
 
-        <View
-          style={{
+            <Pressable
 
-            paddingHorizontal:
-              SPACING.md,
+              onPress={
+                handleStartMatch
+              }
 
-            gap:
-              SPACING.md,
+              style={{
 
-            marginBottom:
-              SPACING.xxl,
-          }}
-        >
+                backgroundColor:
+                  COLORS.success,
 
-          {/* START */}
+                borderRadius:
+                  RADIUS.lg,
 
-          {
-            match.status ===
-              'scheduled' && (
+                padding:
+                  SPACING.lg,
 
-              <Pressable
+                alignItems:
+                  'center',
+              }}
+            >
 
-                disabled={
-                  actionLoading
-                }
-
-                onPress={
-                  handleStartMatch
-                }
-
+              <Text
                 style={{
 
-                  backgroundColor:
-                    COLORS.success,
+                  color:
+                    '#fff',
 
-                  borderRadius:
-                    RADIUS.lg,
-
-                  padding:
-                    SPACING.lg,
-
-                  alignItems:
-                    'center',
+                  fontWeight:
+                    '800',
                 }}
               >
+                Iniciar Partido
+              </Text>
 
-                <Text
-                  style={{
+            </Pressable>
+          )
+        }
 
-                    color:
-                      COLORS.buttonText,
-
-                    fontSize:
-                      TYPOGRAPHY.body,
-
-                    fontWeight:
-                      '800',
-                  }}
-                >
-                  ▶ Iniciar Partido
-                </Text>
-
-              </Pressable>
-            )
-          }
-
-          {/* HALFTIME */}
-
-          {
+        {
+          (
             match.status ===
-              'live' && (
+              'live'
+
+            ||
+
+            match.status ===
+              'halftime'
+          ) && (
+
+            <View
+              style={{
+                gap:
+                  SPACING.md,
+              }}
+            >
+
+              {/* GOLES */}
 
               <Pressable
 
-                disabled={
-                  actionLoading
-                }
-
-                onPress={
-                  handleHalftime
+                onPress={() =>
+                  setGoalModalVisible(
+                    true,
+                  )
                 }
 
                 style={{
@@ -688,40 +1033,27 @@ export default function MatchControlScreen() {
                     color:
                       COLORS.buttonText,
 
-                    fontSize:
-                      TYPOGRAPHY.body,
-
                     fontWeight:
                       '800',
                   }}
                 >
-                  ⏸ Descanso
+                  Gol Local
                 </Text>
 
               </Pressable>
-            )
-          }
-
-          {/* SECOND HALF */}
-
-          {
-            match.status ===
-              'halftime' && (
 
               <Pressable
 
-                disabled={
-                  actionLoading
-                }
-
-                onPress={
-                  handleStartMatch
+                onPress={() =>
+                  setAwayGoalModalVisible(
+                    true,
+                  )
                 }
 
                 style={{
 
                   backgroundColor:
-                    COLORS.success,
+                    COLORS.primary,
 
                   borderRadius:
                     RADIUS.lg,
@@ -740,36 +1072,260 @@ export default function MatchControlScreen() {
                     color:
                       COLORS.buttonText,
 
-                    fontSize:
-                      TYPOGRAPHY.body,
+                    fontWeight:
+                      '800',
+                  }}
+                >
+                  Gol Visitante
+                </Text>
+
+              </Pressable>
+
+              {/* AMARILLAS */}
+
+              <Pressable
+
+                onPress={() =>
+                  setYellowModalVisible(
+                    true,
+                  )
+                }
+
+                style={{
+
+                  backgroundColor:
+                    '#eab308',
+
+                  borderRadius:
+                    RADIUS.lg,
+
+                  padding:
+                    SPACING.lg,
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Text
+                  style={{
+
+                    color:
+                      '#000',
 
                     fontWeight:
                       '800',
                   }}
                 >
-                  ▶ Segundo Tiempo
+                  Amarilla Local
                 </Text>
 
               </Pressable>
-            )
-          }
-
-          {/* FINISH */}
-
-          {
-            (
-              match.status ===
-                'live' ||
-
-              match.status ===
-                'halftime'
-            ) && (
 
               <Pressable
 
-                disabled={
-                  actionLoading
+                onPress={() =>
+                  setAwayYellowModalVisible(
+                    true,
+                  )
                 }
+
+                style={{
+
+                  backgroundColor:
+                    '#eab308',
+
+                  borderRadius:
+                    RADIUS.lg,
+
+                  padding:
+                    SPACING.lg,
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Text
+                  style={{
+
+                    color:
+                      '#000',
+
+                    fontWeight:
+                      '800',
+                  }}
+                >
+                  Amarilla Visitante
+                </Text>
+
+              </Pressable>
+
+              {/* ROJAS */}
+
+              <Pressable
+
+                onPress={() =>
+                  setRedModalVisible(
+                    true,
+                  )
+                }
+
+                style={{
+
+                  backgroundColor:
+                    '#dc2626',
+
+                  borderRadius:
+                    RADIUS.lg,
+
+                  padding:
+                    SPACING.lg,
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Text
+                  style={{
+
+                    color:
+                      '#fff',
+
+                    fontWeight:
+                      '800',
+                  }}
+                >
+                  Roja Local
+                </Text>
+
+              </Pressable>
+
+              <Pressable
+
+                onPress={() =>
+                  setAwayRedModalVisible(
+                    true,
+                  )
+                }
+
+                style={{
+
+                  backgroundColor:
+                    '#dc2626',
+
+                  borderRadius:
+                    RADIUS.lg,
+
+                  padding:
+                    SPACING.lg,
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Text
+                  style={{
+
+                    color:
+                      '#fff',
+
+                    fontWeight:
+                      '800',
+                  }}
+                >
+                  Roja Visitante
+                </Text>
+
+              </Pressable>
+
+              {/* MATCH CONTROL */}
+
+              {
+                match.status ===
+                'live' ? (
+
+                  <Pressable
+
+                    onPress={
+                      handleHalftime
+                    }
+
+                    style={{
+
+                      backgroundColor:
+                        COLORS.surfaceLight,
+
+                      borderRadius:
+                        RADIUS.lg,
+
+                      padding:
+                        SPACING.lg,
+
+                      alignItems:
+                        'center',
+                    }}
+                  >
+
+                    <Text
+                      style={{
+
+                        color:
+                          COLORS.text,
+
+                        fontWeight:
+                          '800',
+                      }}
+                    >
+                      Entretiempo
+                    </Text>
+
+                  </Pressable>
+
+                ) : (
+
+                  <Pressable
+
+                    onPress={
+                      handleResumeMatch
+                    }
+
+                    style={{
+
+                      backgroundColor:
+                        COLORS.success,
+
+                      borderRadius:
+                        RADIUS.lg,
+
+                      padding:
+                        SPACING.lg,
+
+                      alignItems:
+                        'center',
+                    }}
+                  >
+
+                    <Text
+                      style={{
+
+                        color:
+                          '#fff',
+
+                        fontWeight:
+                          '800',
+                      }}
+                    >
+                      Iniciar Segundo Tiempo
+                    </Text>
+
+                  </Pressable>
+                )
+              }
+
+              <Pressable
 
                 onPress={
                   handleFinishMatch
@@ -778,7 +1334,7 @@ export default function MatchControlScreen() {
                 style={{
 
                   backgroundColor:
-                    COLORS.danger,
+                    '#7f1d1d',
 
                   borderRadius:
                     RADIUS.lg,
@@ -795,175 +1351,148 @@ export default function MatchControlScreen() {
                   style={{
 
                     color:
-                      COLORS.buttonText,
-
-                    fontSize:
-                      TYPOGRAPHY.body,
+                      '#fff',
 
                     fontWeight:
                       '800',
                   }}
                 >
-                  🏁 Finalizar Partido
+                  Finalizar Partido
                 </Text>
 
               </Pressable>
-            )
-          }
 
-          {/* GOALS */}
-
-          {
-            (
-              match.status ===
-                'live' ||
-
-              match.status ===
-                'halftime'
-            ) && (
-
-              <>
-
-                <Pressable
-
-                  disabled={
-                    actionLoading
-                  }
-
-                  onPress={() =>
-                    handleGoal(
-                      'home',
-                    )
-                  }
-
-                  style={{
-
-                    backgroundColor:
-                      COLORS.success,
-
-                    borderRadius:
-                      RADIUS.lg,
-
-                    padding:
-                      SPACING.lg,
-
-                    alignItems:
-                      'center',
-                  }}
-                >
-
-                  <Text
-                    style={{
-
-                      color:
-                        COLORS.buttonText,
-
-                      fontSize:
-                        TYPOGRAPHY.body,
-
-                      fontWeight:
-                        '800',
-                    }}
-                  >
-                    ⚽ Gol Local
-                  </Text>
-
-                </Pressable>
-
-                <Pressable
-
-                  disabled={
-                    actionLoading
-                  }
-
-                  onPress={() =>
-                    handleGoal(
-                      'away',
-                    )
-                  }
-
-                  style={{
-
-                    backgroundColor:
-                      COLORS.primary,
-
-                    borderRadius:
-                      RADIUS.lg,
-
-                    padding:
-                      SPACING.lg,
-
-                    alignItems:
-                      'center',
-                  }}
-                >
-
-                  <Text
-                    style={{
-
-                      color:
-                        COLORS.buttonText,
-
-                      fontSize:
-                        TYPOGRAPHY.body,
-
-                      fontWeight:
-                        '800',
-                    }}
-                  >
-                    ⚽ Gol Visitante
-                  </Text>
-
-                </Pressable>
-
-              </>
-            )
-          }
-
-          {
-            match.status ===
-              'finished' && (
-
-              <View
-                style={{
-
-                  backgroundColor:
-                    COLORS.surface,
-
-                  borderRadius:
-                    RADIUS.lg,
-
-                  padding:
-                    SPACING.lg,
-
-                  alignItems:
-                    'center',
-                }}
-              >
-
-                <Text
-                  style={{
-
-                    color:
-                      COLORS.textSecondary,
-
-                    fontSize:
-                      TYPOGRAPHY.body,
-
-                    fontWeight:
-                      '700',
-                  }}
-                >
-                  Partido finalizado
-                </Text>
-
-              </View>
-            )
-          }
-
-        </View>
+            </View>
+          )
+        }
 
       </ScrollView>
+
+      <PlayerSelectModal
+
+        visible={
+          goalModalVisible
+        }
+
+        players={
+          homePlayers
+        }
+
+        onClose={() =>
+          setGoalModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleHomeGoal
+        }
+      />
+
+      <PlayerSelectModal
+
+        visible={
+          awayGoalModalVisible
+        }
+
+        players={
+          awayPlayers
+        }
+
+        onClose={() =>
+          setAwayGoalModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleAwayGoal
+        }
+      />
+
+      <PlayerSelectModal
+
+        visible={
+          yellowModalVisible
+        }
+
+        players={
+          homePlayers
+        }
+
+        onClose={() =>
+          setYellowModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleYellowCard
+        }
+      />
+
+      <PlayerSelectModal
+
+        visible={
+          awayYellowModalVisible
+        }
+
+        players={
+          awayPlayers
+        }
+
+        onClose={() =>
+          setAwayYellowModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleAwayYellowCard
+        }
+      />
+
+      <PlayerSelectModal
+
+        visible={
+          redModalVisible
+        }
+
+        players={
+          homePlayers
+        }
+
+        onClose={() =>
+          setRedModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleRedCard
+        }
+      />
+
+      <PlayerSelectModal
+
+        visible={
+          awayRedModalVisible
+        }
+
+        players={
+          awayPlayers
+        }
+
+        onClose={() =>
+          setAwayRedModalVisible(
+            false,
+          )
+        }
+
+        onSelectPlayer={
+          handleAwayRedCard
+        }
+      />
 
     </Screen>
   );

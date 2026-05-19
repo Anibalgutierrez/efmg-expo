@@ -50,9 +50,9 @@ function MatchCard({
   } = useTheme();
 
   const liveMinute =
-  useMatchClock(
-    match,
-  );
+    useMatchClock(
+      match,
+    );
 
   const renderStatus =
     () => {
@@ -143,20 +143,51 @@ function MatchCard({
               }}
             >
 
-              {
-                match.scheduledAt
-                  ?.toDate?.()
-                  ?.toLocaleTimeString(
-                    [],
-                    {
-                      hour:
-                        '2-digit',
+             {
+  (() => {
 
-                      minute:
-                        '2-digit',
-                    },
-                  )
-              }
+    const date =
+      match.scheduledAt
+        ?.toDate?.();
+
+    if (
+      !date
+    ) {
+      return '';
+    }
+
+    const formattedDate =
+      date.toLocaleDateString(
+        'es-AR',
+        {
+
+          weekday:
+            'short',
+
+          day:
+            'numeric',
+
+          month:
+            'short',
+        },
+      );
+
+    const formattedTime =
+      date.toLocaleTimeString(
+        'es-AR',
+        {
+
+          hour:
+            '2-digit',
+
+          minute:
+            '2-digit',
+        },
+      );
+
+    return `${formattedDate} · ${formattedTime}`;
+  })()
+}
 
             </Text>
           );

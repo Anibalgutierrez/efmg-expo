@@ -1,13 +1,18 @@
 import {
-  ScrollView,
+  useEffect,
+  useState,
+} from 'react';
+
+import {
+  FlatList,
+  Pressable,
   Text,
   View,
-  Pressable,
 } from 'react-native';
 
 import {
-  FlashList,
-} from '@shopify/flash-list';
+  useRouter,
+} from 'expo-router';
 
 import Screen
 from '../../../components/ui/Screen';
@@ -15,16 +20,19 @@ from '../../../components/ui/Screen';
 import useTheme
 from '../../../hooks/useTheme';
 
-import useMatches
-from '../../../features/matches/hooks/useMatches';
+import useCanControlMatches
+from '../../../hooks/useCanControlMatches';
 
 import MatchCard
 from '../../../features/matches/components/MatchCard';
 
 import {
-  useMatchesStore,
-  MatchFilter,
-} from '../../../features/matches/store/matches.store';
+  Match,
+} from '../../../features/matches/types/match.types';
+
+import {
+  subscribeMatchesService,
+} from '../../../features/matches/services/subscribe-matches.service';
 
 import {
   SPACING,
@@ -38,320 +46,214 @@ import {
   RADIUS,
 } from '../../../theme/radius';
 
-const FILTERS: {
-  label: string;
-  value: MatchFilter;
-}[] = [
-
-  {
-    label: 'Todos',
-    value: 'all',
-  },
-
-  {
-    label: 'En Vivo',
-    value: 'live',
-  },
-
-  {
-    label: 'Hoy',
-    value: 'today',
-  },
-
-  {
-    label: 'Próximos',
-    value: 'upcoming',
-  },
-
-  {
-    label: 'Finalizados',
-    value: 'finished',
-  },
-];
-
 export default function MatchesScreen() {
+
+  const router =
+    useRouter();
 
   const {
     COLORS,
   } = useTheme();
 
-  const {
+  const canControlMatches =
+    useCanControlMatches();
 
+  const [
     matches,
+    setMatches,
+  ] = useState<Match[]>(
+    [],
+  );
 
-    refreshing,
+  const [
+    loading,
+    setLoading,
+  ] = useState(
+    true,
+  );
 
-    loadMoreMatches,
+  useEffect(
+    () => {
 
-    refreshMatches,
+      const unsubscribe =
+        subscribeMatchesService(
+          (
+            data,
+          ) => {
 
-  } = useMatches();
-
-  const {
-
-    selectedFilter,
-
-    setFilter,
-
-  } = useMatchesStore();
-
-  const filteredMatches =
-    matches.filter(
-      (
-        match,
-      ) => {
-
-        switch (
-          selectedFilter
-        ) {
-
-          case 'live':
-            return (
-              match.status ===
-              'live'
+            setMatches(
+              data,
             );
 
-          case 'finished':
-            return (
-              match.status ===
-              'finished'
+            setLoading(
+              false,
             );
+          },
+        );
 
-          case 'today': {
+      return () =>
+        unsubscribe();
+    },
 
-            const today =
-              new Date();
-
-            const matchDate =
-              new Date(
-                match.scheduledAt
-                  ?.seconds
-                  ? match.scheduledAt.seconds *
-                      1000
-                  : match.scheduledAt,
-              );
-
-            return (
-              today.toDateString() ===
-              matchDate.toDateString()
-            );
-          }
-
-          case 'upcoming':
-            return (
-              match.status ===
-              'scheduled'
-            );
-
-          default:
-            return true;
-        }
-      },
-    );
+    [],
+  );
 
   return (
 
     <Screen>
 
-      <View
-        style={{
-          flex: 1,
-        }}
-      >
+      {/* CREATE BUTTON */}
 
-        <View
-          style={{
-            paddingHorizontal:
-              SPACING.md,
+      {
+        canControlMatches && (
 
-            paddingTop:
-              SPACING.sm,
+          <Pressable
 
-            marginBottom:
-              SPACING.md,
-          }}
-        >
+            onPress={() =>
+              router.push(
+                '/matches/create',
+              )
+            }
 
-          <Text
             style={{
 
-              color:
-                COLORS.text,
+              backgroundColor:
+                COLORS.primary,
 
-              fontSize:
-                TYPOGRAPHY.subtitle,
+              margin:
+                SPACING.md,
 
-              fontWeight:
-                '800',
+              borderRadius:
+                RADIUS.lg,
+
+              padding:
+                SPACING.md,
+
+              alignItems:
+                'center',
             }}
           >
-            Partidos
-          </Text>
 
-        </View>
-
-        <ScrollView
-
-          horizontal
-
-          showsHorizontalScrollIndicator={
-            false
-          }
-
-          contentContainerStyle={{
-            paddingHorizontal:
-              SPACING.md,
-
-            gap:
-              SPACING.sm,
-
-            paddingBottom:
-              SPACING.md,
-          }}
-        >
-
-          {FILTERS.map(
-            (
-              filter,
-            ) => {
-
-              const isActive =
-                selectedFilter ===
-                filter.value;
-
-              return (
-
-                <Pressable
-
-                  key={
-                    filter.value
-                  }
-
-                  onPress={() =>
-                    setFilter(
-                      filter.value,
-                    )
-                  }
-
-                  style={{
-
-                    backgroundColor:
-                      isActive
-                        ? COLORS.primary
-                        : COLORS.surfaceLight,
-
-                    paddingHorizontal:
-                      SPACING.md,
-
-                    paddingVertical: 10,
-
-                    borderRadius:
-                      RADIUS.full,
-                  }}
-                >
-
-                  <Text
-                    style={{
-
-                      color:
-                        isActive
-                          ? COLORS.buttonText
-                          : COLORS.textSecondary,
-
-                      fontWeight:
-                        '700',
-                    }}
-                  >
-                    {filter.label}
-                  </Text>
-
-                </Pressable>
-              );
-            },
-          )}
-
-        </ScrollView>
-
-        <FlashList
-
-          data={
-            filteredMatches
-          }
-
-          keyExtractor={(
-            item,
-          ) => item.id}
-
-          renderItem={({
-            item,
-          }) => (
-            <MatchCard
-              match={item}
-            />
-          )}
-
-          estimatedItemSize={
-            180
-          }
-
-          onEndReached={
-            loadMoreMatches
-          }
-
-          onEndReachedThreshold={
-            0.3
-          }
-
-          refreshing={
-            refreshing
-          }
-
-          onRefresh={
-            refreshMatches
-          }
-
-          showsVerticalScrollIndicator={
-            false
-          }
-
-          contentContainerStyle={{
-
-            paddingHorizontal:
-              SPACING.md,
-
-            paddingBottom: 120,
-          }}
-
-          ListEmptyComponent={
-
-            <View
+            <Text
               style={{
 
-                paddingTop: 120,
+                color:
+                  COLORS.buttonText,
 
-                alignItems:
+                fontWeight:
+                  '800',
+
+                fontSize:
+                  TYPOGRAPHY.body,
+              }}
+            >
+              + Crear Partido
+            </Text>
+
+          </Pressable>
+        )
+      }
+
+      {/* CONTENT */}
+
+      {
+        loading ? (
+
+          <View
+            style={{
+
+              flex: 1,
+
+              justifyContent:
+                'center',
+
+              alignItems:
+                'center',
+            }}
+          >
+
+            <Text
+              style={{
+                color:
+                  COLORS.textSecondary,
+              }}
+            >
+              Cargando partidos...
+            </Text>
+
+          </View>
+
+        ) : matches.length ===
+          0 ? (
+
+          <View
+            style={{
+
+              flex: 1,
+
+              justifyContent:
+                'center',
+
+              alignItems:
+                'center',
+
+              padding:
+                SPACING.xl,
+            }}
+          >
+
+            <Text
+              style={{
+
+                color:
+                  COLORS.textSecondary,
+
+                fontSize:
+                  TYPOGRAPHY.body,
+
+                textAlign:
                   'center',
               }}
             >
+              No hay partidos cargados.
+            </Text>
 
-              <Text
-                style={{
+          </View>
 
-                  color:
-                    COLORS.textSecondary,
+        ) : (
 
-                  fontSize:
-                    TYPOGRAPHY.body,
-                }}
-              >
-                No hay partidos
-              </Text>
+          <FlatList
 
-            </View>
-          }
-        />
+            data={matches}
 
-      </View>
+            keyExtractor={(
+              item,
+            ) => item.id}
+
+            renderItem={({
+              item,
+            }) => (
+
+              <MatchCard
+                match={item}
+              />
+            )}
+
+            contentContainerStyle={{
+
+              paddingHorizontal:
+                SPACING.md,
+
+              paddingBottom:
+                SPACING.xxl,
+            }}
+
+            showsVerticalScrollIndicator={
+              false
+            }
+          />
+        )
+      }
 
     </Screen>
   );

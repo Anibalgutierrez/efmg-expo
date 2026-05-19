@@ -10,15 +10,14 @@ import {
 } from '../../../firebase/config';
 
 import {
-  MatchEvent,
-} from '../types/match-event.types';
+  Match,
+} from '../types/match.types';
 
 type Callback = (
-  events: MatchEvent[],
+  matches: Match[],
 ) => void;
 
-export function subscribeMatchEventsService(
-  matchId: string,
+export function subscribeMatchesService(
   callback: Callback,
 ) {
 
@@ -26,17 +25,13 @@ export function subscribeMatchEventsService(
     collection(
       db,
       'matches',
-      matchId,
-      'events',
     );
 
   const q =
     query(
-
       ref,
-
       orderBy(
-        'minute',
+        'scheduledAt',
         'desc',
       ),
     );
@@ -47,22 +42,21 @@ export function subscribeMatchEventsService(
       snapshot,
     ) => {
 
-      const events =
+      const matches =
         snapshot.docs.map(
           (
             doc,
           ) => ({
 
-            id:
-              doc.id,
+            id: doc.id,
 
             ...doc.data(),
 
           }),
-        ) as MatchEvent[];
+        ) as Match[];
 
       callback(
-        events,
+        matches,
       );
     },
   );

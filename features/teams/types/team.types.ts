@@ -1,3 +1,10 @@
+export interface TeamPlayer {
+
+  id: string;
+
+  name: string;
+}
+
 export interface Team {
 
   id: string;
@@ -13,4 +20,6 @@ export interface Team {
   categoryId: string;
 
   createdAt: any;
+
+  players?: TeamPlayer[];
 }

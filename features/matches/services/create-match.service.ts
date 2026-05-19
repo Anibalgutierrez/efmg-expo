@@ -66,6 +66,9 @@ export async function createMatchService({
 
         logo:
           homeTeam.logo || '',
+
+        players:
+          homeTeam.players || [],
       },
 
       awayTeam: {
@@ -78,6 +81,9 @@ export async function createMatchService({
 
         logo:
           awayTeam.logo || '',
+
+        players:
+          awayTeam.players || [],
       },
 
       /* CATEGORY */

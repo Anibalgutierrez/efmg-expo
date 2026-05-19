@@ -13,5 +13,5 @@ export type User = {
 
   postsCount: number;
 
-  role: 'admin' | 'user' | 'influencer';
+  role: 'admin' | 'user' | 'influencer' | 'collaborator';
 };

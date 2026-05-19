@@ -9,6 +9,13 @@ export type MatchStatus =
   | 'finished'
   | 'cancelled';
 
+export interface MatchPlayer {
+
+  id: string;
+
+  name: string;
+}
+
 export interface MatchTeam {
 
   id: string;
@@ -16,6 +23,8 @@ export interface MatchTeam {
   name: string;
 
   logo?: string;
+
+  players?: MatchPlayer[];
 }
 
 export interface MatchCategory {
@@ -47,12 +56,11 @@ export interface Match {
 
   currentMinute: number;
 
-  startedAt?: any;
+  startedAt?: Timestamp | null;
 
   isLive: boolean;
 
   createdAt: Timestamp;
 
   updatedAt: Timestamp;
-  
 }

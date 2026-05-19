@@ -5,29 +5,36 @@ import {
 
 import {
   Alert,
+  Pressable,
   ScrollView,
   Text,
-  View,
 } from 'react-native';
 
 import {
+  router,
   useRouter,
 } from 'expo-router';
 
 import Screen
-from '../../components/ui/Screen';
+  from '../../components/ui/Screen';
+
+import Header
+  from '../../components/ui/Header';
 
 import Input
-from '../../components/ui/Input';
-
-import Button
-from '../../components/ui/Button';
+  from '../../components/ui/Input';
 
 import SelectorCard
-from '../../components/ui/SelectorCard';
+  from '../../components/ui/SelectorCard';
+
+import SelectModal
+  from '../../components/ui/SelectModal';
 
 import useTheme
-from '../../hooks/useTheme';
+  from '../../hooks/useTheme';
+
+import useCanControlMatches
+  from '../../hooks/useCanControlMatches';
 
 import {
   Team,
@@ -66,15 +73,22 @@ export default function CreateMatchScreen() {
     COLORS,
   } = useTheme();
 
+  const canControlMatches =
+    useCanControlMatches();
+
   const [
     teams,
     setTeams,
-  ] = useState<Team[]>([]);
+  ] = useState<Team[]>(
+    [],
+  );
 
   const [
     categories,
     setCategories,
-  ] = useState<Category[]>([]);
+  ] = useState<Category[]>(
+    [],
+  );
 
   const [
     homeTeam,
@@ -103,14 +117,62 @@ export default function CreateMatchScreen() {
   ] = useState('');
 
   const [
-    scheduledAt,
-    setScheduledAt,
+    matchDate,
+    setMatchDate,
+  ] = useState('');
+
+  const [
+    matchTime,
+    setMatchTime,
   ] = useState('');
 
   const [
     loading,
     setLoading,
   ] = useState(false);
+
+  /* MODALS */
+
+  const [
+    categoryModalVisible,
+    setCategoryModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    homeModalVisible,
+    setHomeModalVisible,
+  ] = useState(
+    false,
+  );
+
+  const [
+    awayModalVisible,
+    setAwayModalVisible,
+  ] = useState(
+    false,
+  );
+
+  /* PROTECTION */
+
+  useEffect(
+    () => {
+
+      if (
+        !canControlMatches
+      ) {
+
+        router.replace(
+          '/matches',
+        );
+      }
+    },
+
+    [
+      canControlMatches,
+    ],
+  );
 
   useEffect(
     () => {
@@ -161,7 +223,8 @@ export default function CreateMatchScreen() {
       !awayTeam ||
       !category ||
       !venue ||
-      !scheduledAt
+      !matchDate ||
+      !matchTime
     ) {
 
       Alert.alert(
@@ -185,10 +248,49 @@ export default function CreateMatchScreen() {
       return;
     }
 
+    const normalizedDate =
+      matchDate.replaceAll(
+        '/',
+        '-',
+      );
+
+    const finalDate =
+      new Date(
+        `${normalizedDate}T${matchTime}:00`,
+      );
+
+    console.log(
+      'normalizedDate:',
+      normalizedDate,
+    );
+
+    console.log(
+      'finalDate:',
+      finalDate,
+    );
+
+    if (
+      isNaN(
+        finalDate.getTime(),
+      )
+    ) {
+
+      Alert.alert(
+        'Fecha inválida',
+        'Ingresá una fecha y hora válidas.',
+      );
+
+      return;
+    }
+
     try {
 
       setLoading(
         true,
+      );
+
+      console.log(
+        'CREATING MATCH...',
       );
 
       await createMatchService({
@@ -202,9 +304,7 @@ export default function CreateMatchScreen() {
         venue,
 
         scheduledAt:
-          new Date(
-            scheduledAt,
-          ),
+          finalDate,
       });
 
       Alert.alert(
@@ -212,7 +312,9 @@ export default function CreateMatchScreen() {
         'El partido fue creado correctamente.',
       );
 
-      router.back();
+      router.replace(
+        '/matches',
+      );
 
     } catch (
       error
@@ -236,9 +338,36 @@ export default function CreateMatchScreen() {
     }
   }
 
+  if (
+    !canControlMatches
+  ) {
+
+    return null;
+  }
+
   return (
 
     <Screen>
+
+      <Header
+        title="Crear"
+
+        onBack={() => {
+
+          if (
+            router.canGoBack()
+          ) {
+
+            router.back();
+
+          } else {
+
+            router.push(
+              '/matches',
+            );
+          }
+        }}
+      />
 
       <ScrollView
         contentContainerStyle={{
@@ -274,150 +403,60 @@ export default function CreateMatchScreen() {
 
         {/* CATEGORY */}
 
-        <View
-          style={{
-            gap: SPACING.sm,
-          }}
-        >
+        <SelectorCard
 
-          <Text
-            style={{
-              color:
-                COLORS.text,
-              fontWeight:
-                '700',
-            }}
-          >
-            Categorías
-          </Text>
+          label="Categoría"
 
-          {
-            categories.map(
-              (
-                item,
-              ) => (
-
-                <SelectorCard
-                  key={item.id}
-                  label={item.name}
-                  value={
-                    category?.id ===
-                    item.id
-                      ? 'Seleccionada'
-                      : undefined
-                  }
-                  placeholder={
-                    item.name
-                  }
-                  onPress={() =>
-                    setCategory(
-                      item,
-                    )
-                  }
-                />
-              ),
-            )
+          value={
+            category?.name
           }
 
-        </View>
+          placeholder="Seleccionar categoría"
+
+          onPress={() =>
+            setCategoryModalVisible(
+              true,
+            )
+          }
+        />
 
         {/* HOME TEAM */}
 
-        <View
-          style={{
-            gap: SPACING.sm,
-          }}
-        >
+        <SelectorCard
 
-          <Text
-            style={{
-              color:
-                COLORS.text,
-              fontWeight:
-                '700',
-            }}
-          >
-            Equipo Local
-          </Text>
+          label="Equipo Local"
 
-          {
-            teams.map(
-              (
-                item,
-              ) => (
-
-                <SelectorCard
-                  key={item.id}
-                  label={item.name}
-                  value={
-                    homeTeam?.id ===
-                    item.id
-                      ? 'Seleccionado'
-                      : undefined
-                  }
-                  placeholder={
-                    item.name
-                  }
-                  onPress={() =>
-                    setHomeTeam(
-                      item,
-                    )
-                  }
-                />
-              ),
-            )
+          value={
+            homeTeam?.name
           }
 
-        </View>
+          placeholder="Seleccionar equipo"
+
+          onPress={() =>
+            setHomeModalVisible(
+              true,
+            )
+          }
+        />
 
         {/* AWAY TEAM */}
 
-        <View
-          style={{
-            gap: SPACING.sm,
-          }}
-        >
+        <SelectorCard
 
-          <Text
-            style={{
-              color:
-                COLORS.text,
-              fontWeight:
-                '700',
-            }}
-          >
-            Equipo Visitante
-          </Text>
+          label="Equipo Visitante"
 
-          {
-            teams.map(
-              (
-                item,
-              ) => (
-
-                <SelectorCard
-                  key={item.id}
-                  label={item.name}
-                  value={
-                    awayTeam?.id ===
-                    item.id
-                      ? 'Seleccionado'
-                      : undefined
-                  }
-                  placeholder={
-                    item.name
-                  }
-                  onPress={() =>
-                    setAwayTeam(
-                      item,
-                    )
-                  }
-                />
-              ),
-            )
+          value={
+            awayTeam?.name
           }
 
-        </View>
+          placeholder="Seleccionar equipo"
+
+          onPress={() =>
+            setAwayModalVisible(
+              true,
+            )
+          }
+        />
 
         {/* VENUE */}
 
@@ -433,25 +472,163 @@ export default function CreateMatchScreen() {
         {/* DATE */}
 
         <Input
-          label="Fecha y Hora"
-          placeholder="2026-05-17T18:00:00"
-          value={scheduledAt}
+          label="Fecha"
+          placeholder="2026/05/18"
+          value={matchDate}
           onChangeText={
-            setScheduledAt
+            setMatchDate
+          }
+        />
+
+        {/* TIME */}
+
+        <Input
+          label="Hora"
+          placeholder="18:30"
+          value={matchTime}
+          onChangeText={
+            setMatchTime
           }
         />
 
         {/* BUTTON */}
 
-        <Button
-          title="Crear Partido"
-          onPress={
-            handleCreateMatch
-          }
-          loading={loading}
-        />
+        <Pressable
+
+          onPress={() => {
+
+            console.log(
+              'PRESS WORKING',
+            );
+
+            console.log(
+              'VALUES:',
+              homeTeam?.name,
+              awayTeam?.name,
+              category?.name,
+              venue,
+              matchDate,
+              matchTime,
+            );
+
+            handleCreateMatch();
+          }}
+
+          style={{
+
+            backgroundColor:
+              COLORS.primary,
+
+            padding:
+              SPACING.lg,
+
+            borderRadius: 12,
+
+            alignItems:
+              'center',
+          }}
+        >
+
+          <Text
+            style={{
+
+              color: '#fff',
+
+              fontWeight:
+                '800',
+            }}
+          >
+            {
+              loading
+                ? 'Creando...'
+                : 'Crear Partido'
+            }
+          </Text>
+
+        </Pressable>
 
       </ScrollView>
+
+      {/* CATEGORY MODAL */}
+
+      <SelectModal
+
+        visible={
+          categoryModalVisible
+        }
+
+        title="Seleccionar categoría"
+
+        items={categories}
+
+        onClose={() =>
+          setCategoryModalVisible(
+            false,
+          )
+        }
+
+        onSelect={(
+          item,
+        ) =>
+          setCategory(
+            item as Category,
+          )
+        }
+      />
+
+      {/* HOME TEAM MODAL */}
+
+      <SelectModal
+
+        visible={
+          homeModalVisible
+        }
+
+        title="Equipo Local"
+
+        items={teams}
+
+        onClose={() =>
+          setHomeModalVisible(
+            false,
+          )
+        }
+
+        onSelect={(
+          item,
+        ) =>
+          setHomeTeam(
+            item as Team,
+          )
+        }
+      />
+
+      {/* AWAY TEAM MODAL */}
+
+      <SelectModal
+
+        visible={
+          awayModalVisible
+        }
+
+        title="Equipo Visitante"
+
+        items={teams}
+
+        onClose={() =>
+          setAwayModalVisible(
+            false,
+          )
+        }
+
+        onSelect={(
+          item,
+        ) =>
+          setAwayTeam(
+            item as Team,
+          )
+        }
+      />
 
     </Screen>
   );
