@@ -425,14 +425,7 @@ export default function CreateScreen() {
     <Screen>
 
       <Header
-        title="Crear"
-
-        onBack={() => {
-
-          resetForm();
-
-          router.back();
-        }}
+        title="Crear Posts"
       />
 
       <ScrollView

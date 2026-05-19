@@ -200,7 +200,7 @@ function MatchCard({
 
       onPress={() =>
         router.push(
-          `/matches/${match.id}`,
+          `/match/${match.id}`,
         )
       }
 

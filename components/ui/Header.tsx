@@ -1,7 +1,12 @@
+import React, {
+  memo,
+} from 'react';
+
 import {
   View,
   Pressable,
   Image,
+  StyleSheet,
 } from 'react-native';
 
 import {
@@ -25,7 +30,7 @@ type Props = {
   onBack?: () => void;
 };
 
-export default function Header({
+function Header({
 
   title,
 
@@ -45,57 +50,39 @@ export default function Header({
   return (
 
     <View
-      style={{
+      style={[
 
-        height: 70,
+        styles.container,
 
-        backgroundColor:
-          COLORS.surface,
+        {
 
-        flexDirection:
-          'row',
+          backgroundColor:
+            COLORS.surface,
 
-        alignItems:
-          'center',
-
-        justifyContent:
-          'space-between',
-
-        paddingHorizontal: 16,
-
-        borderBottomWidth: 1,
-
-        borderBottomColor:
-          COLORS.border,
-      }}
+          borderBottomColor:
+            COLORS.border,
+        },
+      ]}
     >
 
       {/* LEFT */}
       <View
-        style={{
-
-          width: 40,
-
-          alignItems:
-            'flex-start',
-        }}
+        style={styles.side}
       >
 
         {onBack ? (
 
           <Pressable
+
             onPress={onBack}
+
+            hitSlop={10}
           >
 
             <Ionicons
-              name=
-                "arrow-back"
-
+              name="arrow-back"
               size={24}
-
-              color={
-                COLORS.text
-              }
+              color={COLORS.text}
             />
 
           </Pressable>
@@ -110,23 +97,13 @@ export default function Header({
 
       {/* CENTER */}
       <View
-        style={{
-          flex: 1,
-          alignItems:
-            'center',
-        }}
+        style={styles.center}
       >
 
         {title ? (
 
           <AppText
-            style={{
-
-              fontSize: 20,
-
-              fontWeight:
-                'bold',
-            }}
+            style={styles.title}
           >
             {title}
           </AppText>
@@ -134,6 +111,7 @@ export default function Header({
         ) : (
 
           <Image
+
             source={
               isDark
                 ? require('../../assets/logos/logo-light.png')
@@ -142,10 +120,7 @@ export default function Header({
 
             resizeMode="contain"
 
-            style={{
-              width: 170,
-              height: 70,
-            }}
+            style={styles.logo}
           />
 
         )}
@@ -154,17 +129,77 @@ export default function Header({
 
       {/* RIGHT */}
       <View
-        style={{
-
-          width: 40,
-
-          alignItems:
-            'flex-end',
-        }}
+        style={[
+          styles.side,
+          styles.right,
+        ]}
       >
+
         {rightElement}
+
       </View>
 
     </View>
   );
 }
+
+export default memo(Header);
+
+const styles =
+  StyleSheet.create({
+
+    container: {
+
+      height: 70,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      paddingHorizontal: 16,
+
+      borderBottomWidth: 1,
+    },
+
+    side: {
+
+      width: 40,
+
+      justifyContent:
+        'center',
+    },
+
+    right: {
+
+      alignItems:
+        'flex-end',
+    },
+
+    center: {
+
+      flex: 1,
+
+      alignItems:
+        'center',
+    },
+
+    title: {
+
+      fontSize: 20,
+
+      fontWeight:
+        'bold',
+    },
+
+    logo: {
+
+      width: 170,
+
+      height: 60,
+    },
+  });

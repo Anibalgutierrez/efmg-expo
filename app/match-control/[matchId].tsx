@@ -166,7 +166,16 @@ export default function MatchControlScreen() {
               'home-player',
 
             name:
-              'Jugador Local',
+              'Local',
+          },
+
+          {
+
+            id:
+              'home-efmg',
+
+            name:
+              'EFMG',
           },
         ];
 
@@ -180,10 +189,19 @@ export default function MatchControlScreen() {
           {
 
             id:
-              'rival-player',
+              'visitante-player',
 
             name:
-              'Jugador Rival',
+              'Visitante',
+          },
+
+          {
+
+            id:
+              'visitante-efmg',
+
+            name:
+              'EFMG',
           },
         ];
 

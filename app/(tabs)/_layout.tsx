@@ -9,17 +9,17 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import useTheme
-from '../../hooks/useTheme';
+  from '../../hooks/useTheme';
 
 import useNotifications
-from '../../features/notifications/hooks/useNotifications';
+  from '../../features/notifications/hooks/useNotifications';
 
 import {
   useUserStore,
 } from '../../store/useUserStore';
 
 import useTabBar
-from '../../context/TabBarContext';
+  from '../../context/TabBarContext';
 
 export default function TabsLayout() {
 
@@ -61,23 +61,21 @@ export default function TabsLayout() {
           borderTopColor:
             COLORS.border,
 
-          height:
-            visible
-              ? 70
-              : 0,
+          position: 'absolute',
 
-          paddingBottom:
-            visible
-              ? 10
-              : 0,
+          height: 70,
 
-          overflow:
-            'hidden',
+          paddingBottom: 10,
 
-          display:
-            visible
-              ? 'flex'
-              : 'none',
+          transform: [
+            {
+              translateY:
+                visible ? 0 : 100,
+            },
+          ],
+
+          opacity:
+            visible ? 1 : 0,
         },
 
         tabBarActiveTintColor:
@@ -110,64 +108,58 @@ export default function TabsLayout() {
         }}
       />
 
-{/* CREATE */}
-<Tabs.Screen
-  name="create"
-
-  options={{
-
-    href:
-      canCreatePost
-        ? '/create'
-        : null,
-
-    title: 'Crear',
-
-    tabBarIcon: ({
-      color,
-      size,
-    }) => (
-
-      <Ionicons
-        name="add"
-        size={size}
-        color={color}
-      />
-    ),
-  }}
-/>
-
       {/* MATCHES */}
       <Tabs.Screen
-  name="matches/index"
+        name="matches/index"
 
-  options={{
+        options={{
 
-    title: 'Partidos',
+          title: 'Partidos',
 
-    headerShown: false,
+          headerShown: false,
 
-    tabBarIcon: ({
-      color,
-      size,
-    }) => (
+          tabBarIcon: ({
+            color,
+            size,
+          }) => (
 
-      <Ionicons
-        name="football"
-        size={size}
-        color={color}
+            <Ionicons
+              name="football"
+              size={size}
+              color={color}
+            />
+
+          ),
+        }}
       />
 
-    ),
-  }}
-/>
 
-<Tabs.Screen
-  name="matches/[matchId]"
-  options={{
-    href: null,
-  }}
-/>
+      {/* CREATE */}
+      <Tabs.Screen
+        name="create"
+
+        options={{
+
+          href:
+            canCreatePost
+              ? '/create'
+              : null,
+
+          title: 'Crear',
+
+          tabBarIcon: ({
+            color,
+            size,
+          }) => (
+
+            <Ionicons
+              name="add"
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
 
       {/* PREDIO */}
       <Tabs.Screen
@@ -212,6 +204,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      
 
     </Tabs>
   );

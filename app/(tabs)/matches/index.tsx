@@ -45,6 +45,7 @@ import {
 import {
   RADIUS,
 } from '../../../theme/radius';
+import Header from '@/components/ui/Header';
 
 export default function MatchesScreen() {
 
@@ -101,6 +102,9 @@ export default function MatchesScreen() {
   return (
 
     <Screen>
+
+            <Header title="Partidos" />
+      
 
       {/* CREATE BUTTON */}
 

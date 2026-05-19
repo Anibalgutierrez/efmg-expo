@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 
 import useTheme
-from '../../../hooks/useTheme';
+  from '../../../hooks/useTheme';
 
 import {
   Match,
@@ -47,7 +47,7 @@ export default function MatchTimeline({
   ) {
 
     switch (
-      type
+    type
     ) {
 
       case 'goal':
@@ -81,7 +81,7 @@ export default function MatchTimeline({
   ) {
 
     switch (
-      event.type
+    event.type
     ) {
 
       case 'goal':
@@ -121,17 +121,17 @@ export default function MatchTimeline({
     return (
 
       type ===
-        'match_started'
+      'match_started'
 
       ||
 
       type ===
-        'halftime'
+      'halftime'
 
       ||
 
       type ===
-        'match_finished'
+      'match_finished'
     );
   }
 
@@ -161,188 +161,74 @@ export default function MatchTimeline({
       }}
     >
 
-      {events.map(
-        (
-          event,
-        ) => {
+      {[...events]
+        .reverse()
+        .map(
+          (
+            event,
+          ) => {
 
-          const centerEvent =
-            isCenterEvent(
-              event.type,
-            );
+            const centerEvent =
+              isCenterEvent(
+                event.type,
+              );
 
-          const isHome =
-            event.teamSide ===
-            'home';
+            const isHome =
+              event.teamSide ===
+              'home';
 
-          const rawLogo =
+            const rawLogo =
 
-  isHome
+              isHome
 
-    ? match?.homeTeam?.logo
+                ? match?.homeTeam?.logo
 
-    : match?.awayTeam?.logo;
+                : match?.awayTeam?.logo;
 
-const teamLogo =
+            const teamLogo =
 
-  typeof rawLogo === 'string' &&
-  rawLogo.trim().length > 0
+              typeof rawLogo === 'string' &&
+                rawLogo.trim().length > 0
 
-    ? rawLogo
+                ? rawLogo
 
-    : null;
+                : null;
 
-          return (
+            return (
 
-            <View
-             key={
-  event.id || `${event.type}-${event.minute}`
-}
-            >
+              <View
+                key={
+                  event.id || `${event.type}-${event.minute}`
+                }
+              >
 
-              {/* CENTER EVENTS */}
+                {/* CENTER EVENTS */}
 
-              {
-                centerEvent && (
-
-                  <View
-                    style={{
-
-                      alignItems:
-                        'center',
-                    }}
-                  >
+                {
+                  centerEvent && (
 
                     <View
                       style={{
 
-                        backgroundColor:
-                          COLORS.surfaceLight,
-
-                        paddingHorizontal:
-                          SPACING.md,
-
-                        paddingVertical:
-                          SPACING.sm,
-
-                        borderRadius:
-                          RADIUS.full,
-
-                        flexDirection:
-                          'row',
-
                         alignItems:
                           'center',
-
-                        gap:
-                          SPACING.sm,
-                      }}
-                    >
-
-                      <Text
-                        style={{
-                          fontSize: 16,
-                        }}
-                      >
-                        {getEventIcon(
-                          event.type,
-                        )}
-                      </Text>
-
-                      <Text
-                        style={{
-
-                          color:
-                            COLORS.text,
-
-                          fontWeight:
-                            '800',
-
-                          fontSize:
-                            TYPOGRAPHY.caption,
-                        }}
-                      >
-                        {getEventLabel(
-                          event,
-                        )}
-                      </Text>
-
-                    </View>
-
-                  </View>
-                )
-              }
-
-              {/* SIDE EVENTS */}
-
-              {
-                !centerEvent && (
-
-                  <View
-                    style={{
-
-                      flexDirection:
-                        'row',
-
-                      justifyContent:
-                        isHome
-                          ? 'flex-start'
-                          : 'flex-end',
-                    }}
-                  >
-
-                    <View
-                      style={{
-
-                        width:
-                          '82%',
-
-                        backgroundColor:
-                          COLORS.surfaceLight,
-
-                        borderRadius:
-                          RADIUS.lg,
-
-                        padding:
-                          SPACING.md,
-
-                        flexDirection:
-                          'row',
-
-                        alignItems:
-                          'center',
-
-                        justifyContent:
-                          'space-between',
-
-                        borderLeftWidth:
-                          isHome
-                            ? 4
-                            : 0,
-
-                        borderRightWidth:
-                          !isHome
-                            ? 4
-                            : 0,
-
-                        borderColor:
-
-                          event.type ===
-                          'goal'
-
-                            ? COLORS.success
-
-                            : event.type ===
-                              'red_card'
-
-                              ? COLORS.danger
-
-                              : COLORS.primary,
                       }}
                     >
 
                       <View
                         style={{
+
+                          backgroundColor:
+                            COLORS.surfaceLight,
+
+                          paddingHorizontal:
+                            SPACING.md,
+
+                          paddingVertical:
+                            SPACING.sm,
+
+                          borderRadius:
+                            RADIUS.full,
 
                           flexDirection:
                             'row',
@@ -350,79 +236,14 @@ const teamLogo =
                           alignItems:
                             'center',
 
-                          flex: 1,
+                          gap:
+                            SPACING.sm,
                         }}
                       >
 
-                        {
-                          teamLogo ? (
-
-                            <Image
-                              source={{
-                                uri:
-                                  teamLogo,
-                              }}
-                              style={{
-
-                                width: 28,
-
-                                height: 28,
-
-                                borderRadius: 14,
-
-                                marginRight:
-                                  SPACING.sm,
-                              }}
-                            />
-
-                          ) : (
-
-                            <View
-                              style={{
-
-                                width: 28,
-
-                                height: 28,
-
-                                borderRadius: 14,
-
-                                marginRight:
-                                  SPACING.sm,
-
-                                backgroundColor:
-                                  COLORS.surface,
-
-                                alignItems:
-                                  'center',
-
-                                justifyContent:
-                                  'center',
-                              }}
-                            >
-
-                              <Text
-                                style={{
-                                  fontSize: 14,
-                                }}
-                              >
-                                {
-                                  isHome
-                                    ? '🏠'
-                                    : '✈️'
-                                }
-                              </Text>
-
-                            </View>
-                          )
-                        }
-
                         <Text
                           style={{
-
-                            fontSize: 20,
-
-                            marginRight:
-                              SPACING.sm,
+                            fontSize: 16,
                           }}
                         >
                           {getEventIcon(
@@ -430,83 +251,264 @@ const teamLogo =
                           )}
                         </Text>
 
+                        <Text
+                          style={{
+
+                            color:
+                              COLORS.text,
+
+                            fontWeight:
+                              '800',
+
+                            fontSize:
+                              TYPOGRAPHY.caption,
+                          }}
+                        >
+                          {getEventLabel(
+                            event,
+                          )}
+                        </Text>
+
+                      </View>
+
+                    </View>
+                  )
+                }
+
+                {/* SIDE EVENTS */}
+
+                {
+                  !centerEvent && (
+
+                    <View
+                      style={{
+
+                        flexDirection:
+                          'row',
+
+                        justifyContent:
+                          isHome
+                            ? 'flex-start'
+                            : 'flex-end',
+                      }}
+                    >
+
+                      <View
+                        style={{
+
+                          width:
+                            '82%',
+
+                          backgroundColor:
+                            COLORS.surfaceLight,
+
+                          borderRadius:
+                            RADIUS.lg,
+
+                          padding:
+                            SPACING.md,
+
+                          flexDirection:
+                            'row',
+
+                          alignItems:
+                            'center',
+
+                          justifyContent:
+                            'space-between',
+
+                          borderLeftWidth:
+                            isHome
+                              ? 4
+                              : 0,
+
+                          borderRightWidth:
+                            !isHome
+                              ? 4
+                              : 0,
+
+                          borderColor:
+
+                            event.type ===
+                              'goal'
+
+                              ? COLORS.success
+
+                              : event.type ===
+                                'red_card'
+
+                                ? COLORS.danger
+
+                                : COLORS.primary,
+                        }}
+                      >
+
                         <View
                           style={{
+
+                            flexDirection:
+                              'row',
+
+                            alignItems:
+                              'center',
+
                             flex: 1,
                           }}
                         >
 
-                          <Text
-                            style={{
-
-                              color:
-                                COLORS.text,
-
-                              fontSize:
-                                TYPOGRAPHY.body,
-
-                              fontWeight:
-                                '700',
-                            }}
-                          >
-                            {getEventLabel(
-                              event,
-                            )}
-                          </Text>
-
                           {
-                            event.description && (
+                            teamLogo ? (
 
-                              <Text
+                              <Image
+                                source={{
+                                  uri:
+                                    teamLogo,
+                                }}
                                 style={{
 
-                                  color:
-                                    COLORS.textSecondary,
+                                  width: 28,
 
-                                  marginTop: 2,
+                                  height: 28,
 
-                                  fontSize:
-                                    TYPOGRAPHY.caption,
+                                  borderRadius: 14,
+
+                                  marginRight:
+                                    SPACING.sm,
+                                }}
+                              />
+
+                            ) : (
+
+                              <View
+                                style={{
+
+                                  width: 28,
+
+                                  height: 28,
+
+                                  borderRadius: 14,
+
+                                  marginRight:
+                                    SPACING.sm,
+
+                                  backgroundColor:
+                                    COLORS.surface,
+
+                                  alignItems:
+                                    'center',
+
+                                  justifyContent:
+                                    'center',
                                 }}
                               >
-                                {event.description}
-                              </Text>
+
+                                <Text
+                                  style={{
+                                    fontSize: 14,
+                                  }}
+                                >
+                                  {
+                                    isHome
+                                      ? '🏠'
+                                      : '✈️'
+                                  }
+                                </Text>
+
+                              </View>
                             )
                           }
 
+                          <Text
+                            style={{
+
+                              fontSize: 20,
+
+                              marginRight:
+                                SPACING.sm,
+                            }}
+                          >
+                            {getEventIcon(
+                              event.type,
+                            )}
+                          </Text>
+
+                          <View
+                            style={{
+                              flex: 1,
+                            }}
+                          >
+
+                            <Text
+                              style={{
+
+                                color:
+                                  COLORS.text,
+
+                                fontSize:
+                                  TYPOGRAPHY.body,
+
+                                fontWeight:
+                                  '700',
+                              }}
+                            >
+                              {getEventLabel(
+                                event,
+                              )}
+                            </Text>
+
+                            {
+                              event.description && (
+
+                                <Text
+                                  style={{
+
+                                    color:
+                                      COLORS.textSecondary,
+
+                                    marginTop: 2,
+
+                                    fontSize:
+                                      TYPOGRAPHY.caption,
+                                  }}
+                                >
+                                  {event.description}
+                                </Text>
+                              )
+                            }
+
+                          </View>
+
                         </View>
+
+                        <Text
+                          style={{
+
+                            color:
+                              COLORS.textSecondary,
+
+                            fontWeight:
+                              '800',
+
+                            marginLeft:
+                              SPACING.sm,
+
+                            fontSize:
+                              TYPOGRAPHY.body,
+                          }}
+                        >
+                          {event.minute}'
+                        </Text>
 
                       </View>
 
-                      <Text
-                        style={{
-
-                          color:
-                            COLORS.textSecondary,
-
-                          fontWeight:
-                            '800',
-
-                          marginLeft:
-                            SPACING.sm,
-
-                          fontSize:
-                            TYPOGRAPHY.body,
-                        }}
-                      >
-                        {event.minute}'
-                      </Text>
-
                     </View>
+                  )
+                }
 
-                  </View>
-                )
-              }
-
-            </View>
-          );
-        },
-      )}
+              </View>
+            );
+          },
+        )}
 
     </View>
   );

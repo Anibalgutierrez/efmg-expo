@@ -16,44 +16,45 @@ import {
 } from 'expo-router';
 
 import Screen
-from '../../../components/ui/Screen';
+  from '../../components/ui/Screen';
 
 import useTheme
-from '../../../hooks/useTheme';
+  from '../../hooks/useTheme';
 
 import useCanControlMatches
-from '../../../hooks/useCanControlMatches';
+  from '../../hooks/useCanControlMatches';
 
 import MatchTimeline
-from '../../../features/matches/components/MatchTimeline';
+  from '../../features/matches/components/MatchTimeline';
 
 import {
   Match,
-} from '../../../features/matches/types/match.types';
+} from '../../features/matches/types/match.types';
 
 import {
   MatchEvent,
-} from '../../../features/matches/types/match-event.types';
+} from '../../features/matches/types/match-event.types';
 
 import {
   subscribeMatchService,
-} from '../../../features/matches/services/subscribe-match.service';
+} from '../../features/matches/services/subscribe-match.service';
 
 import {
   subscribeMatchEventsService,
-} from '../../../features/matches/services/subscribe-match-events.service';
+} from '../../features/matches/services/subscribe-match-events.service';
 
 import {
   SPACING,
-} from '../../../theme/spacing';
+} from '../../theme/spacing';
 
 import {
   TYPOGRAPHY,
-} from '../../../theme/typography';
+} from '../../theme/typography';
 
 import {
   RADIUS,
-} from '../../../theme/radius';
+} from '../../theme/radius';
+import Header from '@/components/ui/Header';
 
 export default function MatchDetailsScreen() {
 
@@ -218,6 +219,27 @@ export default function MatchDetailsScreen() {
   return (
 
     <Screen>
+
+       <Header
+
+          title="Partido"
+
+          onBack={() => {
+
+            if (
+              router.canGoBack()
+            ) {
+
+              router.back();
+
+            } else {
+
+              router.push(
+                '/matches',
+              );
+            }
+          }}
+        />
 
       <ScrollView
         contentContainerStyle={{
