@@ -43,6 +43,9 @@ import QuickDonateButtons
   from '../components/QuickDonateButtons';
 import Header from '@/components/ui/Header';
 
+import InfoPredioCard
+from '../components/InfoPredioCard';
+
 export function PredioScreen() {
 
   const {
@@ -60,7 +63,7 @@ export function PredioScreen() {
 
     <Screen>
 
-      <Header title="Nuestra Casa" />
+      <Header title="Predio (experimental)" />
 
       <ScrollView
         contentContainerStyle={
@@ -157,6 +160,8 @@ export function PredioScreen() {
 <RecentDonations
   donations={donations}
 />
+
+<InfoPredioCard />
         </View>
 
       </ScrollView>

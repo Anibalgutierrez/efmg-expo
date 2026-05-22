@@ -4,11 +4,16 @@
     "slug": "ef-2.0",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/LogoLobasNegroIco192.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+
+"assetBundlePatterns": [
+      "**/*"
+    ],
+
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/LogoLobasNegroIco192.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,14 +22,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/LogoLobasNegroIco192.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/LogoLobasNegroIco192.png",
+      "lang": "es"
     },
     "plugins": [
       "expo-router",

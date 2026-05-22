@@ -17,9 +17,7 @@ import {
   FlashList,
 } from '@shopify/flash-list';
 
-import {
-  Ionicons,
-} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import AppButton
   from '../../../components/ui/AppButton';

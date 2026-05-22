@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useMemo,
 } from 'react';
 
 import {
@@ -10,11 +11,28 @@ export default function useImagePrefetch(
   urls: string[]
 ) {
 
+  const uniqueUrls =
+    useMemo(() => {
+
+      return [
+
+        ...new Set(
+
+          urls.filter(
+            Boolean
+          )
+        ),
+      ];
+
+    }, [urls]);
+
   useEffect(() => {
 
     if (
-      !urls?.length
-    ) return;
+      uniqueUrls.length === 0
+    ) {
+      return;
+    }
 
     async function preload() {
 
@@ -22,10 +40,8 @@ export default function useImagePrefetch(
 
         await Promise.all(
 
-          urls.map(
+          uniqueUrls.map(
             async (url) => {
-
-              if (!url) return;
 
               try {
 
@@ -43,5 +59,5 @@ export default function useImagePrefetch(
 
     preload();
 
-  }, [urls]);
+  }, [uniqueUrls]);
 }

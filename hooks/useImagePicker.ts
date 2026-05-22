@@ -17,12 +17,20 @@ export type PickedImage = {
   height: number;
 };
 
+type PickImageOptions = {
+
+  multiple?: boolean;
+
+  limit?: number;
+};
+
 export default function useImagePicker() {
 
-  async function pickImage():
-    Promise<
-      PickedImage | null
-    > {
+  async function pickImage(
+    options?: PickImageOptions
+  ): Promise<
+    PickedImage[]
+  > {
 
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -36,7 +44,7 @@ export default function useImagePicker() {
         'Necesitamos acceso a tus imágenes.'
       );
 
-      return null;
+      return [];
     }
 
     const result =
@@ -45,7 +53,14 @@ export default function useImagePicker() {
         mediaTypes:
           ImagePicker.MediaTypeOptions.Images,
 
-        allowsEditing: true,
+        allowsEditing:
+          !options?.multiple,
+
+        allowsMultipleSelection:
+          options?.multiple || false,
+
+        selectionLimit:
+          options?.limit || 1,
 
         quality: 1,
       });
@@ -54,47 +69,57 @@ export default function useImagePicker() {
       result.canceled
     ) {
 
-      return null;
+      return [];
     }
 
     try {
 
-      const asset =
-        result.assets[0];
+      const optimizedImages =
+        await Promise.all(
 
-      const optimized =
-        await ImageManipulator.manipulateAsync(
+          result.assets.map(
+            async (
+              asset
+            ) => {
 
-          asset.uri,
+              const optimized =
+                await ImageManipulator.manipulateAsync(
 
-          [
-            {
-              resize: {
-                width: 1280,
-              },
-            },
-          ],
+                  asset.uri,
 
-          {
+                  [
+                    {
+                      resize: {
+                        width: 1280,
+                      },
+                    },
+                  ],
 
-            compress: 0.7,
+                  {
 
-            format:
-              ImageManipulator.SaveFormat.WEBP,
-          }
+                    compress: 0.7,
+
+                    format:
+                      ImageManipulator.SaveFormat.WEBP,
+                  }
+                );
+
+              return {
+
+                uri:
+                  optimized.uri,
+
+                width:
+                  optimized.width,
+
+                height:
+                  optimized.height,
+              };
+            }
+          )
         );
 
-      return {
-
-        uri:
-          optimized.uri,
-
-        width:
-          optimized.width,
-
-        height:
-          optimized.height,
-      };
+      return optimizedImages;
 
     } catch {
 
@@ -103,7 +128,7 @@ export default function useImagePicker() {
         'No se pudo procesar la imagen.'
       );
 
-      return null;
+      return [];
     }
   }
 

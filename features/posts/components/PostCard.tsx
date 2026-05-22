@@ -5,19 +5,17 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
-import {
-  Ionicons,
-} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   useRouter,
 } from 'expo-router';
 
 import {
-  useState,
   memo,
   useCallback,
   useMemo,
+  useState,
 } from 'react';
 
 import {
@@ -25,25 +23,25 @@ import {
 } from 'expo-image';
 
 import Card
-  from '../../../components/ui/Card';
+from '../../../components/ui/Card';
 
 import AppText
-  from '../../../components/ui/AppText';
+from '../../../components/ui/AppText';
 
 import Avatar
-  from '../../../components/ui/Avatar';
+from '../../../components/ui/Avatar';
 
 import IconButton
-  from '../../../components/ui/IconButton';
+from '../../../components/ui/IconButton';
 
 import Divider
-  from '../../../components/ui/Divider';
+from '../../../components/ui/Divider';
 
 import useLikePost
-  from '../hooks/useLikePost';
+from '../hooks/useLikePost';
 
 import CommentsModal
-  from '../../comments/components/CommentsModal';
+from '../../comments/components/CommentsModal';
 
 import {
   useUserStore,
@@ -54,7 +52,7 @@ import {
 } from '../../../store/usePostsStore';
 
 import useTheme
-  from '../../../hooks/useTheme';
+from '../../../hooks/useTheme';
 
 import {
   SPACING,
@@ -69,7 +67,10 @@ import {
 } from '../../../services/posts/delete-post.service';
 
 import ConfirmModal
-  from './ConfirmModal';
+from './ConfirmModal';
+
+import PostMediaCarousel
+from './PostMediaCarousel';
 
 type Props = {
   post: Post;
@@ -138,7 +139,6 @@ function PostCard({
 
       try {
 
-        // Firestore Timestamp
         if (
           typeof (post.createdAt as any)
             ?.toDate === 'function'
@@ -151,7 +151,6 @@ function PostCard({
             .toLocaleString();
         }
 
-        // JS Date
         if (
           post.createdAt instanceof Date
         ) {
@@ -160,7 +159,6 @@ function PostCard({
             .toLocaleString();
         }
 
-        // string | number
         const parsedDate =
           new Date(
             post.createdAt as any
@@ -188,32 +186,62 @@ function PostCard({
     ]);
 
   // =========================
-  // IMAGE
+  // IMAGES
   // =========================
-  const postImage =
-    useMemo(() => {
+  const postImages =
+  useMemo(() => {
 
-      if (!post.image) {
-        return undefined;
-      }
+    if (
+      post.images &&
+      post.images.length > 0
+    ) {
+
+      return post.images;
+    }
+
+    if (
+      post.image
+    ) {
 
       if (
         typeof post.image ===
         'string'
       ) {
 
-        return post.image;
+        return [
+          {
+            original:
+              post.image,
+
+            medium:
+              post.image,
+
+            thumb:
+              post.image,
+          },
+        ];
       }
 
-      return (
-        post.image.original ||
-        post.image.medium ||
-        post.image.thumb
-      );
+      return [
+        {
+          original:
+            post.image.original,
 
-    }, [
-      post.image,
-    ]);
+          medium:
+            post.image.medium,
+
+          thumb:
+            post.image.thumb,
+        },
+      ];
+    }
+
+    return [];
+
+  }, [
+    post.images,
+    post.image,
+  ]);
 
   // =========================
   // HEIGHT
@@ -575,44 +603,18 @@ function PostCard({
 
           )}
 
-        {/* IMAGE */}
+        {/* IMAGES */}
         {post.type ===
           'post' &&
-          !!postImage && (
+          postImages.length > 0 && (
 
-            <Image
-              source={{
-                uri:
-                  postImage,
-              }}
-
-              recyclingKey={
-                post.id
-              }
-
-              cachePolicy="memory-disk"
-
-              contentFit="cover"
-
-              transition={120}
-
-              style={{
-
-                width: '100%',
-
-                height:
-                  mediaHeight,
-
-                borderRadius: 18,
-
-                marginBottom:
-                  SPACING.md,
-              }}
-
-              placeholder={require('../../../assets/placeholder.png')}
+            <PostMediaCarousel
+              postId={post.id}
+              images={postImages}
+              height={mediaHeight}
             />
 
-          )}
+        )}
 
         <Divider />
 
@@ -729,24 +731,6 @@ export default memo(
   PostCard,
   (prev, next) => {
 
-    const prevImage =
-      typeof prev.post.image ===
-        'string'
-
-        ? prev.post.image
-
-        : prev.post.image
-          ?.original;
-
-    const nextImage =
-      typeof next.post.image ===
-        'string'
-
-        ? next.post.image
-
-        : next.post.image
-          ?.original;
-
     return (
 
       prev.post.id ===
@@ -761,8 +745,12 @@ export default memo(
       prev.post.content ===
       next.post.content &&
 
-      prevImage ===
-      nextImage &&
+      JSON.stringify(
+        prev.post.images
+      ) ===
+      JSON.stringify(
+        next.post.images
+      ) &&
 
       prev.post.thumbnail ===
       next.post.thumbnail

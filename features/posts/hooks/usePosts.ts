@@ -397,21 +397,20 @@ export default function usePosts() {
   // PREFETCH IMAGES
   // =========================
   const imageUrls =
-    posts.flatMap(
-      (post) => [
+  posts.flatMap(
+    (post) => [
 
-        post.user?.avatar,
+      post.user?.avatar,
 
-        typeof post.image ===
-          'string'
+      ...(post.images || []).map(
+        (img) => img.medium,
+      ),
 
-          ? post.image
+      post.image?.medium,
 
-          : post.image?.medium,
-
-        post.thumbnail,
-      ]
-    ).filter(Boolean);
+      post.thumbnail,
+    ]
+  ).filter(Boolean);
 
   useImagePrefetch(
     imageUrls as string[]

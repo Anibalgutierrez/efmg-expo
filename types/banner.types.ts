@@ -2,7 +2,14 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 
+export type BannerActionType =
+
+  | 'route'
+  | 'match'
+  | 'external';
+
 export type Banner = {
+
   id: string;
 
   title: string;
@@ -16,4 +23,11 @@ export type Banner = {
   order: number;
 
   createdAt: Timestamp;
+
+  buttonText?: string;
+
+  actionType?:
+    BannerActionType;
+
+  actionValue?: string;
 };

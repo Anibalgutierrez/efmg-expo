@@ -97,11 +97,11 @@ export default function CreateScreen() {
   ] = useState('');
 
   const [
-    imageUri,
-    setImageUri,
-  ] = useState<
-    string | undefined
-  >();
+    imageUris,
+    setImageUris,
+  ] = useState<string[]>(
+    []
+  );
 
   const [
     reelUrl,
@@ -120,33 +120,68 @@ export default function CreateScreen() {
     useCallback(() => {
 
       setContent('');
-      setImageUri(undefined);
+      setImageUris([]);
       setReelUrl('');
       setType('post');
 
     }, []);
 
   // =========================
-  // PICK IMAGE
+  // PICK IMAGES
   // =========================
   const handlePickImage =
     useCallback(async () => {
 
-      const image:
-        PickedImage | null =
-          await pickImage();
+      const images =
+        await pickImage({
 
-      if (!image?.uri) {
+          multiple: true,
+
+          limit: 5,
+        });
+
+      if (
+        !images ||
+        images.length === 0
+      ) {
         return;
       }
 
-      setImageUri(
-        image.uri
+      const uris =
+        images
+          .slice(0, 5)
+          .map(
+            (
+              image: PickedImage
+            ) => image.uri
+          );
+
+      setImageUris(
+        uris
       );
 
     }, [
       pickImage,
     ]);
+
+  // =========================
+  // REMOVE IMAGE
+  // =========================
+  const removeImage =
+    useCallback((
+      uri: string
+    ) => {
+
+      setImageUris(
+        (prev) =>
+
+          prev.filter(
+            (item) =>
+              item !== uri
+          )
+      );
+
+    }, []);
 
   // =========================
   // YOUTUBE THUMB
@@ -272,12 +307,12 @@ export default function CreateScreen() {
       if (
         type === 'post' &&
         !content.trim() &&
-        !imageUri
+        imageUris.length === 0
       ) {
 
         Alert.alert(
           'Error',
-          'Agrega texto o una imagen.'
+          'Agrega texto o imágenes.'
         );
 
         return;
@@ -311,24 +346,33 @@ export default function CreateScreen() {
             : undefined;
 
         // =========================
-        // IMAGE UPLOAD
+        // IMAGE UPLOADS
         // =========================
-        let uploadedImage:
+        let uploadedImages:
           | {
               original: string;
               medium: string;
               thumb: string;
-            }
+            }[]
           | undefined;
 
         if (
           type === 'post' &&
-          imageUri
+          imageUris.length > 0
         ) {
 
-          uploadedImage =
-            await uploadImage(
-              imageUri
+          uploadedImages =
+            await Promise.all(
+
+              imageUris.map(
+                (
+                  uri
+                ) =>
+
+                  uploadImage(
+                    uri
+                  )
+              )
             );
         }
 
@@ -353,10 +397,10 @@ export default function CreateScreen() {
             serverTimestamp(),
 
           ...(type === 'post' &&
-            uploadedImage && {
+            uploadedImages && {
 
-              image:
-                uploadedImage,
+              images:
+                uploadedImages,
             }),
 
           ...(type === 'reel'
@@ -410,7 +454,7 @@ export default function CreateScreen() {
 
       content,
       getYoutubeThumbnail,
-      imageUri,
+      imageUris,
       loading,
       reelUrl,
       resetForm,
@@ -573,39 +617,126 @@ export default function CreateScreen() {
 
           <>
 
-            {!!imageUri && (
+            {imageUris.length > 0 && (
 
-              <Image
-                source={{
-                  uri: imageUri,
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={
+                  false
+                }
+
+                contentContainerStyle={{
+                  gap: 12,
                 }}
+              >
 
-                cachePolicy="memory-disk"
+                {imageUris.map(
+                  (uri) => (
 
-                contentFit="cover"
+                    <View
+                      key={uri}
+                    >
 
-                transition={120}
+                      <Image
+                        source={{
+                          uri,
+                        }}
 
-                style={{
+                        cachePolicy="memory-disk"
 
-                  width: '100%',
+                        contentFit="cover"
 
-                  height: 220,
+                        transition={120}
 
-                  borderRadius: 18,
-                }}
-              />
+                        style={{
+
+                          width: 180,
+
+                          height: 180,
+
+                          borderRadius: 18,
+                        }}
+                      />
+
+                      <Pressable
+                        onPress={() =>
+                          removeImage(
+                            uri
+                          )
+                        }
+
+                        style={{
+
+                          position:
+                            'absolute',
+
+                          top: 8,
+
+                          right: 8,
+
+                          width: 28,
+
+                          height: 28,
+
+                          borderRadius: 999,
+
+                          backgroundColor:
+                            'rgba(0,0,0,0.7)',
+
+                          justifyContent:
+                            'center',
+
+                          alignItems:
+                            'center',
+                        }}
+                      >
+
+                        <AppText
+                          style={{
+                            color:
+                              'white',
+
+                            fontWeight:
+                              'bold',
+                          }}
+                        >
+                          ✕
+                        </AppText>
+
+                      </Pressable>
+
+                    </View>
+                  )
+                )}
+
+              </ScrollView>
 
             )}
 
             <AppButton
-              title=
-                "Seleccionar imagen"
+              title={
+                imageUris.length >= 5
+                  ? 'Máximo 5 imágenes'
+                  : 'Seleccionar imágenes'
+              }
+
+              disabled={
+                imageUris.length >= 5
+              }
 
               onPress={
                 handlePickImage
               }
             />
+
+            <AppText
+              style={{
+                opacity: 0.7,
+                fontSize: 13,
+              }}
+            >
+              {imageUris.length}/5 imágenes
+            </AppText>
 
           </>
 

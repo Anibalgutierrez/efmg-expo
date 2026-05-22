@@ -1,3 +1,4 @@
+
 import {
   Dimensions,
   Platform,
@@ -13,11 +14,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useEffect,
 } from 'react';
 
-import {
-  Ionicons,
-} from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import {
   WebView,
@@ -45,6 +45,28 @@ const {
 );
 
 // =========================
+// HELPERS
+// =========================
+function getEmbedUrl(
+  url: string
+) {
+
+  const match =
+    url.match(
+      /(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/
+    );
+
+  if (!match) {
+    return '';
+  }
+
+  const videoId =
+    match[1];
+
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&playsinline=1&rel=0&modestbranding=1`;
+}
+
+// =========================
 // REEL PLAYER
 // =========================
 const ReelPlayer = memo(
@@ -54,6 +76,7 @@ const ReelPlayer = memo(
     embedUrl: string;
   }) => {
 
+    // WEB
     if (
       Platform.OS ===
       'web'
@@ -63,6 +86,8 @@ const ReelPlayer = memo(
 
         <iframe
           src={embedUrl}
+
+          loading="lazy"
 
           style={{
             width: '100%',
@@ -78,6 +103,7 @@ const ReelPlayer = memo(
       );
     }
 
+    // MOBILE
     return (
 
       <WebView
@@ -97,6 +123,8 @@ const ReelPlayer = memo(
 
         allowsFullscreenVideo
 
+        allowsInlineMediaPlayback
+
         mediaPlaybackRequiresUserAction={
           false
         }
@@ -105,7 +133,13 @@ const ReelPlayer = memo(
           false
         }
 
-        allowsInlineMediaPlayback
+        originWhitelist={[
+          '*',
+        ]}
+
+        setSupportMultipleWindows={
+          false
+        }
       />
 
     );
@@ -123,25 +157,6 @@ const ReelItem = memo(
     item: Post;
     isActive: boolean;
   }) => {
-
-    function getEmbedUrl(
-      url: string
-    ) {
-
-      const match =
-        url.match(
-          /(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([^?&]+)/
-        );
-
-      if (!match) {
-        return '';
-      }
-
-      const videoId =
-        match[1];
-
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=0&playsinline=1&rel=0`;
-    }
 
     const embedUrl =
       isActive
@@ -260,6 +275,16 @@ export default function ReelsScreen() {
     initialIndex
   );
 
+  useEffect(() => {
+
+    setActiveIndex(
+      initialIndex
+    );
+
+  }, [
+    initialIndex,
+  ]);
+
   const listRef =
     useRef<any>(
       null
@@ -360,12 +385,16 @@ export default function ReelsScreen() {
 
         pagingEnabled
 
+        decelerationRate="fast"
+
+        snapToAlignment="start"
+
         showsVerticalScrollIndicator={
           false
         }
 
         removeClippedSubviews={
-          false
+          Platform.OS !== 'web'
         }
 
         initialScrollIndex={
@@ -380,11 +409,13 @@ export default function ReelsScreen() {
           viewabilityConfig
         }
 
-        windowSize={3}
+        windowSize={2}
 
-        maxToRenderPerBatch={2}
+        maxToRenderPerBatch={1}
 
         initialNumToRender={1}
+
+        updateCellsBatchingPeriod={50}
 
         getItemLayout={(
           _,

@@ -14,6 +14,15 @@ export type ReelPlatform =
   | 'tiktok'
   | 'instagram';
 
+export type PostImage = {
+
+  original: string;
+
+  medium: string;
+
+  thumb: string;
+};
+
 export type Post = {
 
   id: string;
@@ -22,14 +31,11 @@ export type Post = {
 
   content: string;
 
-  image?: {
+  // LEGACY
+  image?: PostImage | string;
 
-  original: string;
-
-  medium: string;
-
-  thumb: string;
-};
+  // NEW
+  images?: PostImage[];
 
   // REELS
   reelUrl?: string;
