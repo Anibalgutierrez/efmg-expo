@@ -28,12 +28,6 @@ from '../../../components/ui/Card';
 import AppText
 from '../../../components/ui/AppText';
 
-import Avatar
-from '../../../components/ui/Avatar';
-
-import IconButton
-from '../../../components/ui/IconButton';
-
 import Divider
 from '../../../components/ui/Divider';
 
@@ -49,7 +43,7 @@ import {
 
 import {
   usePostsStore,
-} from '../../../store/usePostsStore';
+} from '../store/usePostsStore';
 
 import useTheme
 from '../../../hooks/useTheme';
@@ -60,7 +54,7 @@ import {
 
 import {
   Post,
-} from '../../../types/post.types';
+} from '../types/post.types';
 
 import {
   deletePost,
@@ -69,8 +63,22 @@ import {
 import ConfirmModal
 from './ConfirmModal';
 
-import PostMediaCarousel
-from './PostMediaCarousel';
+import PostHeader
+from './shared/PostHeader';
+
+import PostActions
+from './shared/PostActions';
+
+import {
+  formatPostDate,
+} from '../utils/formatPostDate';
+
+import PostMediaGrid
+from './PostMediaGrid';
+
+import {
+  getImageUri,
+} from '../../../utils/getImageUri';
 
 type Props = {
   post: Post;
@@ -133,53 +141,9 @@ function PostCard({
   const createdAtText =
     useMemo(() => {
 
-      if (!post.createdAt) {
-        return '';
-      }
-
-      try {
-
-        if (
-          typeof (post.createdAt as any)
-            ?.toDate === 'function'
-        ) {
-
-          return (
-            post.createdAt as any
-          )
-            .toDate()
-            .toLocaleString();
-        }
-
-        if (
-          post.createdAt instanceof Date
-        ) {
-
-          return post.createdAt
-            .toLocaleString();
-        }
-
-        const parsedDate =
-          new Date(
-            post.createdAt as any
-          );
-
-        if (
-          isNaN(
-            parsedDate.getTime()
-          )
-        ) {
-
-          return '';
-        }
-
-        return parsedDate
-          .toLocaleString();
-
-      } catch {
-
-        return '';
-      }
+      return formatPostDate(
+        post.createdAt
+      );
 
     }, [
       post.createdAt,
@@ -189,59 +153,13 @@ function PostCard({
   // IMAGES
   // =========================
   const postImages =
-  useMemo(() => {
+    useMemo(() => {
 
-    if (
-      post.images &&
-      post.images.length > 0
-    ) {
+      return post.images || [];
 
-      return post.images;
-    }
-
-    if (
-      post.image
-    ) {
-
-      if (
-        typeof post.image ===
-        'string'
-      ) {
-
-        return [
-          {
-            original:
-              post.image,
-
-            medium:
-              post.image,
-
-            thumb:
-              post.image,
-          },
-        ];
-      }
-
-      return [
-        {
-          original:
-            post.image.original,
-
-          medium:
-            post.image.medium,
-
-          thumb:
-            post.image.thumb,
-        },
-      ];
-    }
-
-    return [];
-
-  }, [
-    post.images,
-    post.image,
-  ]);
+    }, [
+      post.images,
+    ]);
 
   // =========================
   // HEIGHT
@@ -251,19 +169,17 @@ function PostCard({
 
       return width > 500
         ? (
-          post.type ===
+            post.type ===
             'reel'
-
-            ? 520
-            : 360
-        )
+              ? 520
+              : 360
+          )
         : (
-          post.type ===
+            post.type ===
             'reel'
-
-            ? 420
-            : 240
-        );
+              ? 420
+              : 240
+          );
 
     }, [
       width,
@@ -382,105 +298,13 @@ function PostCard({
       <Card>
 
         {/* HEADER */}
-        <View
-          style={{
-
-            flexDirection:
-              'row',
-
-            alignItems:
-              'center',
-
-            justifyContent:
-              'space-between',
-
-            marginBottom:
-              SPACING.md,
-          }}
-        >
-
-          <Pressable
-            onPress={
-              openProfile
-            }
-
-            style={{
-
-              flexDirection:
-                'row',
-
-              alignItems:
-                'center',
-
-              flex: 1,
-            }}
-          >
-
-            <Avatar
-              uri={
-                user?.avatar
-              }
-            />
-
-            <View
-              style={{
-
-                marginLeft: 12,
-
-                flex: 1,
-              }}
-            >
-
-              <AppText
-                numberOfLines={1}
-
-                style={{
-
-                  fontWeight:
-                    'bold',
-
-                  color:
-                    COLORS.text,
-                }}
-              >
-                {post.user.name}
-              </AppText>
-
-              <AppText
-                style={{
-
-                  color:
-                    COLORS.textSecondary,
-
-                  fontSize: 13,
-                }}
-              >
-                {createdAtText}
-              </AppText>
-
-            </View>
-
-          </Pressable>
-
-          {isOwner ? (
-
-            <IconButton
-              icon="trash-outline"
-
-              onPress={
-                openDeleteModal
-              }
-            />
-
-          ) : (
-
-            <IconButton
-              icon="ellipsis-horizontal"
-            />
-
-          )}
-
-        </View>
+        <PostHeader
+          post={post}
+          createdAtText={createdAtText}
+          isOwner={isOwner}
+          onPressProfile={openProfile}
+          onPressDelete={openDeleteModal}
+        />
 
         {/* CONTENT */}
         {!!post.content && (
@@ -506,182 +330,126 @@ function PostCard({
         {post.type ===
           'reel' && (
 
-            <Pressable
-              onPress={
-                openReel
-              }
-            >
+          <Pressable
+            onPress={
+              openReel
+            }
+          >
 
-              <View>
+            <View>
 
-                <Image
-                  source={{
-                    uri:
-                      post.thumbnail,
-                  }}
+              <Image
+                source={{
+                  uri:
+                    getImageUri(
+                      post.thumbnail
+                    ),
+                }}
 
-                  recyclingKey={
-                    post.id
-                  }
+                recyclingKey={
+                  post.id
+                }
 
-                  cachePolicy="memory-disk"
+                cachePolicy="memory-disk"
 
-                  contentFit="cover"
+                contentFit="cover"
 
-                  transition={120}
+                transition={120}
 
-                  style={{
+                style={{
 
-                    width: '100%',
+                  width: '100%',
 
-                    height:
-                      mediaHeight,
+                  height:
+                    mediaHeight,
 
-                    borderRadius: 18,
+                  borderRadius: 18,
 
-                    marginBottom:
-                      SPACING.md,
-                  }}
+                  marginBottom:
+                    SPACING.md,
+                }}
 
-                  placeholder={require('../../../assets/placeholder.png')}
+                placeholder={require('../../../assets/placeholder.png')}
+              />
+
+              <View
+                style={{
+
+                  pointerEvents:
+                    'none',
+
+                  position:
+                    'absolute',
+
+                  top: '50%',
+
+                  left: '50%',
+
+                  transform: [
+
+                    {
+                      translateX:
+                        -40,
+                    },
+
+                    {
+                      translateY:
+                        -40,
+                    },
+                  ],
+
+                  backgroundColor:
+                    'rgba(0,0,0,0.5)',
+
+                  width: 80,
+
+                  height: 80,
+
+                  borderRadius: 40,
+
+                  justifyContent:
+                    'center',
+
+                  alignItems:
+                    'center',
+                }}
+              >
+
+                <Ionicons
+                  name="play"
+                  size={44}
+                  color="white"
                 />
-
-                <View
-                  style={{
-
-                    pointerEvents:
-                      'none',
-
-                    position:
-                      'absolute',
-
-                    top: '50%',
-
-                    left: '50%',
-
-                    transform: [
-
-                      {
-                        translateX:
-                          -40,
-                      },
-
-                      {
-                        translateY:
-                          -40,
-                      },
-                    ],
-
-                    backgroundColor:
-                      'rgba(0,0,0,0.5)',
-
-                    width: 80,
-
-                    height: 80,
-
-                    borderRadius: 40,
-
-                    justifyContent:
-                      'center',
-
-                    alignItems:
-                      'center',
-                  }}
-                >
-
-                  <Ionicons
-                    name="play"
-                    size={44}
-                    color="white"
-                  />
-
-                </View>
 
               </View>
 
-            </Pressable>
+            </View>
 
-          )}
+          </Pressable>
+
+        )}
 
         {/* IMAGES */}
-        {post.type ===
-          'post' &&
-          postImages.length > 0 && (
+        {postImages.length > 0 && (
 
-            <PostMediaCarousel
-              postId={post.id}
-              images={postImages}
-              height={mediaHeight}
-            />
+          <PostMediaGrid
+            postId={post.id}
+            images={postImages}
+            height={mediaHeight}
+          />
 
         )}
 
         <Divider />
 
         {/* ACTIONS */}
-        <View
-          style={{
-
-            flexDirection:
-              'row',
-
-            justifyContent:
-              'space-around',
-
-            marginTop:
-              SPACING.md,
-          }}
-        >
-
-          <Pressable
-            onPress={
-              toggleLike
-            }
-
-            style={{
-              padding: 8,
-            }}
-          >
-
-            <AppText
-              style={{
-                color:
-                  COLORS.text,
-              }}
-            >
-
-              {liked
-                ? '❤️'
-                : '🤍'}{' '}
-
-              {likes}
-
-            </AppText>
-
-          </Pressable>
-
-          <Pressable
-            onPress={
-              openComments
-            }
-
-            style={{
-              padding: 8,
-            }}
-          >
-
-            <AppText
-              style={{
-                color:
-                  COLORS.text,
-              }}
-            >
-              💬 {post.commentsCount}
-            </AppText>
-
-          </Pressable>
-
-        </View>
+        <PostActions
+          liked={liked}
+          likes={likes}
+          commentsCount={post.commentsCount}
+          onLike={toggleLike}
+          onComments={openComments}
+        />
 
       </Card>
 
@@ -709,10 +477,10 @@ function PostCard({
         }
 
         title=
-        "Eliminar publicación"
+          "Eliminar publicación"
 
         description=
-        "Esta acción no se puede deshacer."
+          "Esta acción no se puede deshacer."
 
         onCancel={
           closeDeleteModal
@@ -734,26 +502,26 @@ export default memo(
     return (
 
       prev.post.id ===
-      next.post.id &&
+        next.post.id &&
 
       prev.post.likesCount ===
-      next.post.likesCount &&
+        next.post.likesCount &&
 
       prev.post.commentsCount ===
-      next.post.commentsCount &&
+        next.post.commentsCount &&
 
       prev.post.content ===
-      next.post.content &&
+        next.post.content &&
 
       JSON.stringify(
         prev.post.images
       ) ===
-      JSON.stringify(
-        next.post.images
-      ) &&
+        JSON.stringify(
+          next.post.images
+        ) &&
 
       prev.post.thumbnail ===
-      next.post.thumbnail
+        next.post.thumbnail
     );
   }
 );

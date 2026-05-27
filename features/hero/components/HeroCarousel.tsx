@@ -1,4 +1,3 @@
-
 import {
   Dimensions,
   Pressable,
@@ -10,6 +9,7 @@ import {
   useEffect,
   useRef,
   useState,
+  memo,
 } from 'react';
 
 import {
@@ -21,6 +21,7 @@ import {
 } from 'expo-image';
 
 import Animated, {
+  SharedValue,
   Extrapolation,
   interpolate,
   useAnimatedScrollHandler,
@@ -53,6 +54,11 @@ import {
 import useTheme
 from '../../../hooks/useTheme';
 
+import {
+  Banner,
+  BannerImage,
+} from '../types/banner.types';
+
 const {
   width: SCREEN_WIDTH,
 } = Dimensions.get('window');
@@ -65,24 +71,36 @@ const ITEM_WIDTH =
     MAX_WIDTH,
   );
 
-const ITEM_SPACING =
-  12;
-
 const AUTO_PLAY_INTERVAL =
   5000;
-
-type Banner = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  image?: string;
-  buttonText?: string;
-};
 
 const AnimatedFlatList =
   Animated.createAnimatedComponent(
     FlatList<Banner>,
   );
+
+// =========================
+// IMAGE HELPER
+// =========================
+function getBannerImageUri(
+  image?: string | BannerImage
+) {
+
+  if (!image) {
+    return '';
+  }
+
+  if (typeof image === 'string') {
+    return image;
+  }
+
+  return (
+    image.medium ||
+    image.original ||
+    image.thumb ||
+    ''
+  );
+}
 
 export default function HeroCarousel() {
 
@@ -98,17 +116,22 @@ export default function HeroCarousel() {
   } = useBanners();
 
   const flatListRef =
-    useRef<FlatList>(null);
+    useRef<FlatList<Banner>>(null);
 
   const currentIndexRef =
     useRef(0);
 
-  const [activeIndex, setActiveIndex] =
-    useState(0);
+  const [
+    activeIndex,
+    setActiveIndex,
+  ] = useState(0);
 
   const scrollX =
     useSharedValue(0);
 
+  // =========================
+  // AUTOPLAY
+  // =========================
   useEffect(() => {
 
     if (
@@ -117,40 +140,55 @@ export default function HeroCarousel() {
       return;
     }
 
-    const interval = setInterval(() => {
+    const interval =
+      setInterval(() => {
 
-      let nextIndex =
-        currentIndexRef.current + 1;
+        let nextIndex =
+          currentIndexRef.current + 1;
 
-      if (
-        nextIndex >= banners.length
-      ) {
-        nextIndex = 0;
-      }
+        if (
+          nextIndex >=
+          banners.length
+        ) {
 
-      flatListRef.current?.scrollToOffset({
-        offset:
-          nextIndex * ITEM_WIDTH,
+          nextIndex = 0;
+        }
 
-        animated: true,
-      });
+        flatListRef.current?.scrollToOffset({
 
-      currentIndexRef.current =
-        nextIndex;
+          offset:
+            nextIndex * ITEM_WIDTH,
 
-      setActiveIndex(nextIndex);
+          animated: true,
+        });
 
-    }, AUTO_PLAY_INTERVAL);
+        currentIndexRef.current =
+          nextIndex;
+
+        setActiveIndex(
+          nextIndex
+        );
+
+      }, AUTO_PLAY_INTERVAL);
 
     return () =>
-      clearInterval(interval);
+      clearInterval(
+        interval
+      );
 
-  }, [banners.length]);
+  }, [
+    banners.length,
+  ]);
 
+  // =========================
+  // SCROLL
+  // =========================
   const onScroll =
     useAnimatedScrollHandler({
 
-      onScroll: (event) => {
+      onScroll: (
+        event
+      ) => {
 
         scrollX.value =
           event.contentOffset.x;
@@ -178,15 +216,7 @@ export default function HeroCarousel() {
       <AnimatedFlatList
         ref={flatListRef}
 
-        style={{
-          width: ITEM_WIDTH,
-        }}
-
         data={banners}
-
-        keyExtractor={(item) =>
-          item.id
-        }
 
         horizontal
 
@@ -204,72 +234,106 @@ export default function HeroCarousel() {
           false
         }
 
+        style={{
+          width:
+            ITEM_WIDTH,
+        }}
+
         contentContainerStyle={{
           paddingHorizontal: 0,
         }}
 
-        onMomentumScrollEnd={(event) => {
+        keyExtractor={(
+          item
+        ) => item.id}
 
-          const index = Math.round(
-            event.nativeEvent.contentOffset.x /
-            ITEM_WIDTH,
-          );
+        onMomentumScrollEnd={(
+          event
+        ) => {
+
+          const index =
+            Math.round(
+
+              event.nativeEvent
+                .contentOffset.x /
+
+              ITEM_WIDTH
+            );
 
           currentIndexRef.current =
             index;
 
-          setActiveIndex(index);
+          setActiveIndex(
+            index
+          );
         }}
 
-        onScroll={onScroll}
+        onScroll={
+          onScroll
+        }
 
-        scrollEventThrottle={16}
+        scrollEventThrottle={
+          16
+        }
 
         renderItem={({
           item,
           index,
-        }: {
-          item: Banner;
-          index: number;
-        }) => {
+        }) => (
 
-          return (
-            <CarouselItem
-              banner={item}
-              index={index}
-              scrollX={scrollX}
-              router={router}
-              COLORS={COLORS}
-            />
-          );
-        }}
+          <CarouselItem
+            banner={item}
+            index={index}
+            scrollX={scrollX}
+            router={router}
+            COLORS={COLORS}
+          />
+
+        )}
       />
 
       {/* PAGINATION */}
       <View
         style={{
-          flexDirection: 'row',
-          justifyContent: 'center',
-          marginTop: SPACING.lg,
+
+          flexDirection:
+            'row',
+
+          justifyContent:
+            'center',
+
+          marginTop:
+            SPACING.lg,
+
           gap: 8,
         }}
       >
 
-        {banners.map((_, index) => {
+        {banners.map((
+          _,
+          index
+        ) => {
 
           const isActive =
-            index === activeIndex;
+            index ===
+            activeIndex;
 
           return (
+
             <View
               key={index}
+
               style={{
+
                 width:
-                  isActive ? 28 : 8,
+                  isActive
+                    ? 28
+                    : 8,
 
                 height: 8,
 
-                borderRadius: 999,
+                borderRadius:
+                  999,
 
                 backgroundColor:
                   isActive
@@ -286,234 +350,357 @@ export default function HeroCarousel() {
   );
 }
 
-function CarouselItem({
-  banner,
-  index,
-  scrollX,
-  router,
-  COLORS,
-}: any) {
+// =========================
+// ITEM
+// =========================
+const CarouselItem = memo(
+  function CarouselItem({
+    banner,
+    index,
+    scrollX,
+    router,
+    COLORS,
+  }: {
+    banner: Banner;
+    index: number;
+    scrollX: SharedValue<number>;
+    router: ReturnType<typeof useRouter>;
+    COLORS: any;
+  }) {
 
-  const animatedStyle =
-    useAnimatedStyle(() => {
-
-      const inputRange = [
-        (index - 1) * ITEM_WIDTH,
-        index * ITEM_WIDTH,
-        (index + 1) * ITEM_WIDTH,
-      ];
-
-      const scale = interpolate(
-        scrollX.value,
-        inputRange,
-        [0.94, 1, 0.94],
-        Extrapolation.CLAMP,
+    const imageUri =
+      getBannerImageUri(
+        banner.image
       );
 
-      const opacity = interpolate(
-        scrollX.value,
-        inputRange,
-        [0.7, 1, 0.7],
-        Extrapolation.CLAMP,
-      );
+    const animatedStyle =
+      useAnimatedStyle(() => {
 
-      return {
-        transform: [{ scale }],
-        opacity,
-      };
-    });
+        const inputRange = [
 
-  const imageAnimatedStyle =
-    useAnimatedStyle(() => {
+          (index - 1) *
+            ITEM_WIDTH,
 
-      const inputRange = [
-        (index - 1) * ITEM_WIDTH,
-        index * ITEM_WIDTH,
-        (index + 1) * ITEM_WIDTH,
-      ];
+          index *
+            ITEM_WIDTH,
 
-      const translateX = interpolate(
-        scrollX.value,
-        inputRange,
-        [-18, 0, 18],
-        Extrapolation.CLAMP,
-      );
+          (index + 1) *
+            ITEM_WIDTH,
+        ];
 
-      return {
-        transform: [{ translateX }],
-      };
-    });
+        const scale =
+          interpolate(
 
-  return (
+            scrollX.value,
 
-    <Animated.View
-      style={[
-        {
-          width: ITEM_WIDTH,
-          paddingHorizontal: 0,
-        },
+            inputRange,
 
-        animatedStyle,
-      ]}
-    >
+            [
+              0.94,
+              1,
+              0.94,
+            ],
 
-      <Pressable
-        onPress={() =>
-          handleBannerAction(
-            banner,
-            router,
-          )
-        }
+            Extrapolation.CLAMP,
+          );
+
+        const opacity =
+          interpolate(
+
+            scrollX.value,
+
+            inputRange,
+
+            [
+              0.7,
+              1,
+              0.7,
+            ],
+
+            Extrapolation.CLAMP,
+          );
+
+        return {
+
+          transform: [
+            { scale },
+          ],
+
+          opacity,
+        };
+      });
+
+    const imageAnimatedStyle =
+      useAnimatedStyle(() => {
+
+        const inputRange = [
+
+          (index - 1) *
+            ITEM_WIDTH,
+
+          index *
+            ITEM_WIDTH,
+
+          (index + 1) *
+            ITEM_WIDTH,
+        ];
+
+        const translateX =
+          interpolate(
+
+            scrollX.value,
+
+            inputRange,
+
+            [
+              -18,
+              0,
+              18,
+            ],
+
+            Extrapolation.CLAMP,
+          );
+
+        return {
+
+          transform: [
+            {
+              translateX,
+            },
+          ],
+        };
+      });
+
+    return (
+
+      <Animated.View
+        style={[
+          {
+
+            width:
+              ITEM_WIDTH,
+          },
+
+          animatedStyle,
+        ]}
       >
 
-        <View
-          style={{
-            height: 320,
-            borderRadius: 0,
-            overflow: 'hidden',
-            backgroundColor: COLORS.surface,
-            shadowColor: '#000',
-            shadowOpacity: 0.25,
-            shadowRadius: 20,
-            shadowOffset: {
-              width: 0,
-              height: 10,
-            },
-            elevation: 10,
-          }}
+        <Pressable
+          onPress={() =>
+
+            handleBannerAction(
+              banner,
+              router,
+            )
+          }
         >
 
-          {banner.image ? (
+          <View
+            style={{
 
-            <Animated.View
-              style={[
-                {
-                  width: '100%',
-                  height: '100%',
-                },
-                imageAnimatedStyle,
-              ]}
-            >
+              height: 320,
 
-              <Image
-                source={{
-                  uri: banner.image,
-                }}
+              overflow:
+                'hidden',
 
-                contentFit="cover"
+              backgroundColor:
+                COLORS.surface,
 
-                transition={300}
+              shadowColor:
+                '#000',
 
-                cachePolicy="memory-disk"
+              shadowOpacity:
+                0.25,
 
-                style={{
-                  width: '104%',
-                  height: '100%',
-                }}
-              />
+              shadowRadius:
+                20,
 
-            </Animated.View>
+              shadowOffset: {
 
-          ) : (
+                width: 0,
+                height: 10,
+              },
 
-            <View
-              style={{
-                flex: 1,
-                backgroundColor:
-                  getBannerColor(
-                    banner.id,
-                  ),
-              }}
-            />
-          )}
-
-          {/* GRADIENT OVERLAY */}
-          <LinearGradient
-            colors={[
-              'transparent',
-              'rgba(0,0,0,0.15)',
-              'rgba(0,0,0,0.82)',
-            ]}
-
-          style={{
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-
-  justifyContent: 'flex-end',
-
-  paddingHorizontal:
-    SPACING.lg,
-
-  paddingVertical:
-    SPACING.xl,
-
-  paddingBottom: 32,
-}}
+              elevation: 10,
+            }}
           >
 
-            <AppText
-              style={{
-                color: '#fff',
-                fontSize: 28,
-                fontWeight: 'bold',
-              }}
-            >
-              {banner.title}
-            </AppText>
+            {imageUri ? (
 
-            {!!banner.subtitle && (
+              <Animated.View
+                style={[
+                  {
 
-              <AppText
-                style={{
-                  color: 'rgba(255,255,255,0.9)',
-                  marginTop: 6,
-                  fontSize: 15,
-                  lineHeight: 22,
-                }}
+                    width: '100%',
+                    height: '100%',
+                  },
+
+                  imageAnimatedStyle,
+                ]}
               >
-                {banner.subtitle}
-              </AppText>
-            )}
 
-            {!!banner.buttonText && (
+                <Image
+                  source={{
+                    uri:
+                      imageUri,
+                  }}
+
+                  contentFit="cover"
+
+                  transition={300}
+
+                  cachePolicy="memory-disk"
+
+                  style={{
+
+                    width: '104%',
+                    height: '100%',
+                  }}
+                />
+
+              </Animated.View>
+
+            ) : (
 
               <View
                 style={{
-                  marginTop: SPACING.md,
-                  alignSelf: 'flex-start',
+
+                  flex: 1,
+
                   backgroundColor:
-                    'rgba(255,255,255,0.16)',
-                  borderWidth: 1,
-                  borderColor:
-                    'rgba(255,255,255,0.18)',
-                  paddingHorizontal: 18,
-                  paddingVertical: 10,
-                  borderRadius: 999,
+                    getBannerColor(
+                      banner.id,
+                    ),
+                }}
+              />
+
+            )}
+
+            {/* OVERLAY */}
+            <LinearGradient
+              colors={[
+                'transparent',
+
+                'rgba(0,0,0,0.15)',
+
+                'rgba(0,0,0,0.82)',
+              ]}
+
+              style={{
+
+                position:
+                  'absolute',
+
+                left: 0,
+                right: 0,
+
+                top: 0,
+                bottom: 0,
+
+                justifyContent:
+                  'flex-end',
+
+                paddingHorizontal:
+                  SPACING.lg,
+
+                paddingVertical:
+                  SPACING.xl,
+
+                paddingBottom:
+                  32,
+              }}
+            >
+
+              <AppText
+                style={{
+
+                  color: '#fff',
+
+                  fontSize: 28,
+
+                  fontWeight:
+                    'bold',
                 }}
               >
+                {banner.title}
+              </AppText>
+
+              {!!banner.subtitle && (
 
                 <AppText
                   style={{
-                    color: '#fff',
-                    fontWeight: '700',
-                    fontSize: 14,
+
+                    color:
+                      'rgba(255,255,255,0.9)',
+
+                    marginTop: 6,
+
+                    fontSize: 15,
+
+                    lineHeight: 22,
                   }}
                 >
-                  {banner.buttonText}
+                  {banner.subtitle}
                 </AppText>
 
-              </View>
-            )}
+              )}
 
-          </LinearGradient>
+              {!!banner.buttonText && (
 
-        </View>
+                <View
+                  style={{
 
-      </Pressable>
+                    marginTop:
+                      SPACING.md,
 
-    </Animated.View>
-  );
-}
+                    alignSelf:
+                      'flex-start',
+
+                    backgroundColor:
+                      'rgba(255,255,255,0.16)',
+
+                    borderWidth: 1,
+
+                    borderColor:
+                      'rgba(255,255,255,0.18)',
+
+                    paddingHorizontal:
+                      18,
+
+                    paddingVertical:
+                      10,
+
+                    borderRadius:
+                      999,
+                  }}
+                >
+
+                  <AppText
+                    style={{
+
+                      color:
+                        '#fff',
+
+                      fontWeight:
+                        '700',
+
+                      fontSize: 14,
+                    }}
+                  >
+                    {banner.buttonText}
+                  </AppText>
+
+                </View>
+
+              )}
+
+            </LinearGradient>
+
+          </View>
+
+        </Pressable>
+
+      </Animated.View>
+    );
+  }
+);

@@ -1,5 +1,5 @@
 import { User }
-from './user.types';
+from '../../../types/user.types';
 
 import {
   Timestamp,
@@ -31,13 +31,8 @@ export type Post = {
 
   content: string;
 
-  // LEGACY
-  image?: PostImage | string;
-
-  // NEW
   images?: PostImage[];
 
-  // REELS
   reelUrl?: string;
 
   thumbnail?: string;

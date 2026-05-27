@@ -28,12 +28,6 @@ import Card
 import AppText
   from '../../../components/ui/AppText';
 
-import Avatar
-  from '../../../components/ui/Avatar';
-
-import IconButton
-  from '../../../components/ui/IconButton';
-
 import Divider
   from '../../../components/ui/Divider';
 
@@ -55,7 +49,7 @@ import {
 
 import {
   usePostsStore,
-} from '../../../store/usePostsStore';
+} from '../store/usePostsStore';
 
 import {
   deletePost,
@@ -67,7 +61,10 @@ import {
 
 import {
   Post,
-} from '../../../types/post.types';
+} from '../types/post.types';
+import PostHeader from './shared/PostHeader';
+import PostActions from './shared/PostActions';
+import { formatPostDate } from '../utils/formatPostDate';
 
 type Props = {
   post: Post;
@@ -132,59 +129,15 @@ function ReelCard({
   // DATE
   // =========================
   const createdAtText =
-    useMemo(() => {
+  useMemo(() => {
 
-      if (!post.createdAt) {
-        return '';
-      }
+    return formatPostDate(
+      post.createdAt
+    );
 
-      try {
-
-        if (
-          typeof (post.createdAt as any)
-            ?.toDate === 'function'
-        ) {
-
-          return (
-            post.createdAt as any
-          )
-            .toDate()
-            .toLocaleString();
-        }
-
-        if (
-          post.createdAt instanceof Date
-        ) {
-
-          return post.createdAt
-            .toLocaleString();
-        }
-
-        const parsed =
-          new Date(
-            post.createdAt as any
-          );
-
-        if (
-          isNaN(
-            parsed.getTime()
-          )
-        ) {
-
-          return '';
-        }
-
-        return parsed
-          .toLocaleString();
-
-      } catch {
-
-        return '';
-      }
-
-    }, [
-      post.createdAt,
-    ]);
+  }, [
+    post.createdAt,
+  ]);
 
   // =========================
   // THUMBNAIL
@@ -201,6 +154,16 @@ function ReelCard({
   // =========================
   // ACTIONS
   // =========================
+  
+  const openComments =
+  useCallback(() => {
+
+    setCommentsVisible(
+      true
+    );
+
+  }, []);
+  
   const openProfile =
     useCallback(() => {
 
@@ -271,109 +234,15 @@ function ReelCard({
       <Card>
 
         {/* HEADER */}
-        <View
-          style={{
-
-            flexDirection:
-              'row',
-
-            alignItems:
-              'center',
-
-            justifyContent:
-              'space-between',
-
-            marginBottom:
-              SPACING.md,
-          }}
-        >
-
-          <Pressable
-            onPress={
-              openProfile
-            }
-
-            style={{
-
-              flexDirection:
-                'row',
-
-              alignItems:
-                'center',
-
-              flex: 1,
-            }}
-          >
-
-            <Avatar
-              uri={
-                post.user.avatar
-              }
-            />
-
-            <View
-              style={{
-
-                marginLeft: 12,
-
-                flex: 1,
-              }}
-            >
-
-              <AppText
-                numberOfLines={1}
-
-                style={{
-
-                  fontWeight:
-                    'bold',
-
-                  color:
-                    COLORS.text,
-                }}
-              >
-                {post.user.name}
-              </AppText>
-
-              <AppText
-                style={{
-
-                  color:
-                    COLORS.textSecondary,
-
-                  fontSize: 13,
-                }}
-              >
-                {createdAtText}
-              </AppText>
-
-            </View>
-
-          </Pressable>
-
-          {isOwner ? (
-
-            <IconButton
-              icon=
-              "trash-outline"
-
-              onPress={() =>
-                setDeleteVisible(
-                  true
-                )
-              }
-            />
-
-          ) : (
-
-            <IconButton
-              icon=
-              "ellipsis-horizontal"
-            />
-
-          )}
-
-        </View>
+        <PostHeader
+  post={post}
+  createdAtText={createdAtText}
+  isOwner={isOwner}
+  onPressProfile={openProfile}
+  onPressDelete={() =>
+    setDeleteVisible(true)
+  }
+/>
 
         {/* CONTENT */}
         {!!post.content && (
@@ -502,71 +371,13 @@ function ReelCard({
         <Divider />
 
         {/* ACTIONS */}
-        <View
-          style={{
-
-            flexDirection:
-              'row',
-
-            justifyContent:
-              'space-around',
-
-            marginTop:
-              SPACING.md,
-          }}
-        >
-
-          <Pressable
-            onPress={
-              toggleLike
-            }
-
-            style={{
-              padding: 8,
-            }}
-          >
-
-            <AppText
-              style={{
-                color:
-                  COLORS.text,
-              }}
-            >
-
-              {liked
-                ? '❤️'
-                : '🤍'}{' '}
-
-              {likes}
-
-            </AppText>
-
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              setCommentsVisible(
-                true
-              )
-            }
-
-            style={{
-              padding: 8,
-            }}
-          >
-
-            <AppText
-              style={{
-                color:
-                  COLORS.text,
-              }}
-            >
-              💬 {post.commentsCount}
-            </AppText>
-
-          </Pressable>
-
-        </View>
+        <PostActions
+  liked={liked}
+  likes={likes}
+  commentsCount={post.commentsCount}
+  onLike={toggleLike}
+  onComments={openComments}
+/>
 
       </Card>
 

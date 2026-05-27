@@ -37,7 +37,7 @@ from '../../features/posts/components/PostCard';
 
 import {
   Post,
-} from '../../types/post.types';
+} from '../../features/posts/types/post.types';
 
 export default function PostScreen() {
 

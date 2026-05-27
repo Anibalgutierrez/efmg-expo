@@ -14,7 +14,7 @@ import {
 
 import {
   Post,
-} from '../../types/post.types';
+} from '../../features/posts/types/post.types';
 
 const FEED_LIMIT = 20;
 

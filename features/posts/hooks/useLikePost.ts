@@ -27,7 +27,7 @@ import {
 
 import {
   usePostsStore,
-} from '../../../store/usePostsStore';
+} from '../store/usePostsStore';
 
 export default function useLikePost(
   postId: string,

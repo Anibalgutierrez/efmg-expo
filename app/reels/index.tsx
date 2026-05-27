@@ -36,7 +36,7 @@ import useVideoPrefetch
 
 import {
   Post,
-} from '../../types/post.types';
+} from '../../features/posts/types/post.types';
 
 const {
   height: WINDOW_HEIGHT,

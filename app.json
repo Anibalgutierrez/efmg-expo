@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/LogoLobasNegroIco192.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
 
 "assetBundlePatterns": [
       "**/*"

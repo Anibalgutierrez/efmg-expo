@@ -1,4 +1,6 @@
 import {
+  useCallback,
+  useMemo,
   useRef,
 } from 'react';
 
@@ -10,6 +12,7 @@ import {
 
 import {
   FlashList,
+  ListRenderItem,
 } from '@shopify/flash-list';
 
 import {
@@ -53,6 +56,10 @@ import FeedItem
 import usePosts
   from '../../features/posts/hooks/usePosts';
 
+import {
+  Post,
+} from '../../features/posts/types/post.types';
+
 export default function HomeScreen() {
 
   const router =
@@ -91,6 +98,94 @@ export default function HomeScreen() {
     refreshPosts,
 
   } = usePosts();
+
+  // =========================
+  // RENDER ITEM
+  // =========================
+  const renderItem:
+    ListRenderItem<Post> =
+
+    useCallback(
+
+      ({ item }) => (
+
+        <FeedItem
+          post={item}
+        />
+
+      ),
+
+      []
+    );
+
+  // =========================
+  // SCROLL
+  // =========================
+  const handleScroll =
+    useCallback((event: any) => {
+
+      const currentY =
+        event.nativeEvent
+          .contentOffset.y;
+
+      const diff =
+        currentY -
+        lastScrollY.current;
+
+      // DOWN
+      if (
+        diff > 6 &&
+        currentY > 40
+      ) {
+
+        hideTabBar();
+      }
+
+      // UP
+      if (
+        diff < -6
+      ) {
+
+        showTabBar();
+      }
+
+      lastScrollY.current =
+        currentY;
+
+    }, [
+      hideTabBar,
+      showTabBar,
+    ]);
+
+  // =========================
+  // HEADER
+  // =========================
+  const listHeader =
+    useMemo(() => (
+
+      <>
+
+        <HeroCarousel />
+
+        {user && (
+
+          <AppText
+            style={{
+
+              marginVertical: 16,
+
+              fontWeight:
+                'bold',
+            }}
+          >
+            Bienvenido {user.name}
+          </AppText>
+
+        )}
+
+      </>
+
+    ), [user]);
 
   return (
 
@@ -135,7 +230,6 @@ export default function HomeScreen() {
         }
       />
 
-      {/* IMPORTANTÍSIMO */}
       <View
         style={{
           flex: 1,
@@ -146,27 +240,22 @@ export default function HomeScreen() {
 
           data={posts}
 
-          estimatedItemSize={420}
+          estimatedItemSize={560}
 
           keyExtractor={(item) =>
             item.id
           }
 
-          renderItem={({ item }) => (
-
-            <FeedItem
-              post={item}
-            />
-
-          )}
+          renderItem={
+            renderItem
+          }
 
           // =========================
           // PAGINATION
           // =========================
-          onEndReached={() => {
-
-            loadMorePosts();
-          }}
+          onEndReached={
+            loadMorePosts
+          }
 
           onEndReachedThreshold={0.4}
 
@@ -191,8 +280,6 @@ export default function HomeScreen() {
           // =========================
           scrollEventThrottle={16}
 
-          removeClippedSubviews
-
           showsVerticalScrollIndicator={
             false
           }
@@ -203,63 +290,15 @@ export default function HomeScreen() {
           // =========================
           // TABBAR ANIMATION
           // =========================
-          onScroll={(event) => {
-
-            const currentY =
-              event.nativeEvent
-                .contentOffset.y;
-
-            const diff =
-              currentY -
-              lastScrollY.current;
-
-            // DOWN
-            if (
-              diff > 6 &&
-              currentY > 40
-            ) {
-
-              hideTabBar();
-            }
-
-            // UP
-            if (
-              diff < -6
-            ) {
-
-              showTabBar();
-            }
-
-            lastScrollY.current =
-              currentY;
-          }}
+          onScroll={
+            handleScroll
+          }
 
           // =========================
           // HEADER
           // =========================
           ListHeaderComponent={
-
-            <>
-
-              <HeroCarousel />
-
-              {user && (
-
-                <AppText
-                  style={{
-
-                    marginVertical: 16,
-
-                    fontWeight:
-                      'bold',
-                  }}
-                >
-                  Bienvenido {user.name}
-                </AppText>
-
-              )}
-
-            </>
+            listHeader
           }
 
           // =========================

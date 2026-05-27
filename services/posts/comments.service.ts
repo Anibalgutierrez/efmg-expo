@@ -22,7 +22,7 @@ import {
 
 import {
   usePostsStore,
-} from '../../store/usePostsStore';
+} from '../../features/posts/store/usePostsStore';
 
 const COMMENTS_LIMIT = 40;
 

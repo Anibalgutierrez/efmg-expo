@@ -9,7 +9,7 @@ import {
 
 import {
   Banner,
-} from '../../../types/banner.types';
+} from '../types/banner.types';
 
 export default function useBanners() {
 
@@ -22,7 +22,41 @@ export default function useBanners() {
 
     const unsubscribe =
       subscribeToBanners(
-        setBanners
+        (
+          fetchedBanners
+        ) => {
+
+          const processed =
+            fetchedBanners
+
+              // =========================
+              // ONLY ACTIVE
+              // =========================
+              .filter(
+                (
+                  banner
+                ) =>
+
+                  banner.active !== false
+              )
+
+              // =========================
+              // SORT
+              // =========================
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+
+                  (a.order || 0) -
+                  (b.order || 0)
+              );
+
+          setBanners(
+            processed
+          );
+        }
       );
 
     return unsubscribe;

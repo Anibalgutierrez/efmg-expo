@@ -14,6 +14,13 @@ type PostsStore = {
     posts: Post[]
   ) => void;
 
+  // =========================
+  // NEW
+  // =========================
+  mergePosts: (
+    posts: Post[]
+  ) => void;
+
   appendPosts: (
     posts: Post[]
   ) => void;
@@ -61,6 +68,93 @@ export const usePostsStore =
       ) => set({
         posts,
       }),
+
+      // =========================
+      // MERGE POSTS
+      // =========================
+      mergePosts: (
+        incomingPosts
+      ) => set(
+        (state) => {
+
+          const existingMap =
+            new Map(
+
+              state.posts.map(
+                (post) => [
+                  post.id,
+                  post,
+                ]
+              )
+            );
+
+          const mergedTop =
+            incomingPosts.map(
+              (incoming) => {
+
+                const existing =
+                  existingMap.get(
+                    incoming.id
+                  );
+
+                // NEW POST
+                if (!existing) {
+                  return incoming;
+                }
+
+                // SAME DATA
+                const isSame =
+
+                  existing.likesCount ===
+                    incoming.likesCount &&
+
+                  existing.commentsCount ===
+                    incoming.commentsCount &&
+
+                  existing.content ===
+                    incoming.content &&
+
+                  JSON.stringify(
+                    existing.images
+                  ) ===
+                  JSON.stringify(
+                    incoming.images
+                  ) &&
+
+                  existing.thumbnail ===
+                    incoming.thumbnail;
+
+                // PRESERVE REFERENCE
+                return isSame
+                  ? existing
+                  : incoming;
+              }
+            );
+
+          // KEEP PAGINATED POSTS
+          const remainingPosts =
+            state.posts.filter(
+              (post) =>
+
+                !incomingPosts.some(
+                  (incoming) =>
+
+                    incoming.id ===
+                    post.id
+                )
+            );
+
+          return {
+
+            posts: [
+
+              ...mergedTop,
+
+              ...remainingPosts,
+            ],
+          };
+        }
+      ),
 
       // =========================
       // APPEND POSTS

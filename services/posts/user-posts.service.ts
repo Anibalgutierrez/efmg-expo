@@ -10,7 +10,7 @@ import { db }
 from '../../firebase/config';
 
 import { Post }
-from '../../types/post.types';
+from '../../features/posts/types/post.types';
 
 export function subscribeToUserPosts(
   userId: string,

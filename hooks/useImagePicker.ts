@@ -1,13 +1,6 @@
 import * as ImagePicker
 from 'expo-image-picker';
 
-import * as ImageManipulator
-from 'expo-image-manipulator';
-
-import {
-  Alert,
-} from 'react-native';
-
 export type PickedImage = {
 
   uri: string;
@@ -17,7 +10,7 @@ export type PickedImage = {
   height: number;
 };
 
-type PickImageOptions = {
+type Options = {
 
   multiple?: boolean;
 
@@ -27,109 +20,50 @@ type PickImageOptions = {
 export default function useImagePicker() {
 
   async function pickImage(
-    options?: PickImageOptions
+    options?: Options
   ): Promise<
-    PickedImage[]
+    PickedImage[] | null
   > {
-
-    const permission =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (
-      !permission.granted
-    ) {
-
-      Alert.alert(
-        'Permiso requerido',
-        'Necesitamos acceso a tus imágenes.'
-      );
-
-      return [];
-    }
 
     const result =
       await ImagePicker.launchImageLibraryAsync({
 
         mediaTypes:
-          ImagePicker.MediaTypeOptions.Images,
-
-        allowsEditing:
-          !options?.multiple,
+          ['images'],
 
         allowsMultipleSelection:
           options?.multiple || false,
 
         selectionLimit:
-          options?.limit || 1,
+          options?.multiple
+            ? (
+                options.limit || 0
+              )
+            : 1,
 
-        quality: 1,
+        quality: 0.8,
       });
 
     if (
       result.canceled
     ) {
 
-      return [];
+      return null;
     }
 
-    try {
+    return result.assets.map(
+      (asset) => ({
 
-      const optimizedImages =
-        await Promise.all(
+        uri:
+          asset.uri,
 
-          result.assets.map(
-            async (
-              asset
-            ) => {
+        width:
+          asset.width,
 
-              const optimized =
-                await ImageManipulator.manipulateAsync(
-
-                  asset.uri,
-
-                  [
-                    {
-                      resize: {
-                        width: 1280,
-                      },
-                    },
-                  ],
-
-                  {
-
-                    compress: 0.7,
-
-                    format:
-                      ImageManipulator.SaveFormat.WEBP,
-                  }
-                );
-
-              return {
-
-                uri:
-                  optimized.uri,
-
-                width:
-                  optimized.width,
-
-                height:
-                  optimized.height,
-              };
-            }
-          )
-        );
-
-      return optimizedImages;
-
-    } catch {
-
-      Alert.alert(
-        'Error',
-        'No se pudo procesar la imagen.'
-      );
-
-      return [];
-    }
+        height:
+          asset.height,
+      })
+    );
   }
 
   return {

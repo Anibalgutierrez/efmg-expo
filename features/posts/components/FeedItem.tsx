@@ -10,11 +10,69 @@ import ReelCard
 
 import {
   Post,
-} from '../../../types/post.types';
+} from '../types/post.types';
 
 type Props = {
   post: Post;
 };
+
+// =========================
+// IMAGE COMPARE
+// =========================
+function areImagesEqual(
+  prevImages?: any[],
+  nextImages?: any[],
+) {
+
+  if (
+    prevImages === nextImages
+  ) {
+    return true;
+  }
+
+  if (
+    !prevImages ||
+    !nextImages
+  ) {
+    return false;
+  }
+
+  if (
+    prevImages.length !==
+    nextImages.length
+  ) {
+    return false;
+  }
+
+  for (
+    let i = 0;
+    i < prevImages.length;
+    i++
+  ) {
+
+    const prev =
+      prevImages[i];
+
+    const next =
+      nextImages[i];
+
+    if (
+      prev.original !==
+        next.original ||
+
+      prev.medium !==
+        next.medium ||
+
+      prev.thumb !==
+        next.thumb
+    ) {
+
+      return false;
+    }
+  }
+
+  return true;
+}
 
 function FeedItem({
   post,
@@ -49,29 +107,45 @@ export default memo(
 
     return (
 
+      // BASIC
       prev.post.id ===
         next.post.id &&
 
+      prev.post.type ===
+        next.post.type &&
+
+      prev.post.content ===
+        next.post.content &&
+
+      // COUNTS
       prev.post.likesCount ===
         next.post.likesCount &&
 
       prev.post.commentsCount ===
         next.post.commentsCount &&
 
-      prev.post.content ===
-        next.post.content &&
-
-      prev.post.image ===
-        next.post.image &&
-
+      // MEDIA
       prev.post.thumbnail ===
         next.post.thumbnail &&
 
       prev.post.reelUrl ===
         next.post.reelUrl &&
 
-      prev.post.createdAt ===
-        next.post.createdAt
+      areImagesEqual(
+        prev.post.images,
+        next.post.images,
+      ) &&
+
+      // USER
+      prev.post.user.id ===
+        next.post.user.id &&
+
+      prev.post.user.name ===
+        next.post.user.name &&
+
+      // DATE
+      prev.post.createdAt?.seconds ===
+        next.post.createdAt?.seconds
     );
   }
 );

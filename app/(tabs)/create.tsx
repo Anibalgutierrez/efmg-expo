@@ -61,7 +61,7 @@ import {
 
 import {
   PostType,
-} from '../../types/post.types';
+} from '../../features/posts/types/post.types';
 
 export default function CreateScreen() {
 
@@ -132,12 +132,21 @@ export default function CreateScreen() {
   const handlePickImage =
     useCallback(async () => {
 
+      const remaining =
+        5 - imageUris.length;
+
+      if (
+        remaining <= 0
+      ) {
+        return;
+      }
+
       const images =
         await pickImage({
 
           multiple: true,
 
-          limit: 5,
+          limit: remaining,
         });
 
       if (
@@ -148,19 +157,23 @@ export default function CreateScreen() {
       }
 
       const uris =
-        images
-          .slice(0, 5)
-          .map(
-            (
-              image: PickedImage
-            ) => image.uri
-          );
+        images.map(
+          (
+            image: PickedImage
+          ) => image.uri
+        );
 
       setImageUris(
-        uris
+        (prev) => [
+
+          ...prev,
+
+          ...uris,
+        ].slice(0, 5)
       );
 
     }, [
+      imageUris.length,
       pickImage,
     ]);
 
@@ -642,6 +655,10 @@ export default function CreateScreen() {
                           uri,
                         }}
 
+                        recyclingKey={
+                          uri
+                        }
+
                         cachePolicy="memory-disk"
 
                         contentFit="cover"
@@ -717,7 +734,7 @@ export default function CreateScreen() {
               title={
                 imageUris.length >= 5
                   ? 'Máximo 5 imágenes'
-                  : 'Seleccionar imágenes'
+                  : `Agregar imágenes (${imageUris.length}/5)`
               }
 
               disabled={
@@ -728,15 +745,6 @@ export default function CreateScreen() {
                 handlePickImage
               }
             />
-
-            <AppText
-              style={{
-                opacity: 0.7,
-                fontSize: 13,
-              }}
-            >
-              {imageUris.length}/5 imágenes
-            </AppText>
 
           </>
 

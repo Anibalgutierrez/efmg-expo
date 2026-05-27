@@ -3,6 +3,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useMemo,
 } from 'react';
 
 import {
@@ -23,11 +24,11 @@ import {
 
 import {
   Post,
-} from '../../../types/post.types';
+} from '../types/post.types';
 
 import {
   usePostsStore,
-} from '../../../store/usePostsStore';
+} from '../store/usePostsStore';
 
 import useImagePrefetch
 from '../../../hooks/useImagePrefetch';
@@ -44,6 +45,11 @@ export default function usePosts() {
   const setPosts =
     usePostsStore(
       (state) => state.setPosts
+    );
+
+  const mergePosts =
+    usePostsStore(
+      (state) => state.mergePosts
     );
 
   const appendPosts =
@@ -369,7 +375,7 @@ export default function usePosts() {
               snapshot
             );
 
-          setPosts(
+          mergePosts(
             fetchedPosts
           );
 
@@ -389,31 +395,43 @@ export default function usePosts() {
       unsubscribe();
 
   }, [
+    mergePosts,
     serializePosts,
-    setPosts,
   ]);
 
   // =========================
   // PREFETCH IMAGES
   // =========================
   const imageUrls =
-  posts.flatMap(
-    (post) => [
+    useMemo(() => {
 
-      post.user?.avatar,
+      return posts
+        .flatMap(
+          (post) => [
 
-      ...(post.images || []).map(
-        (img) => img.medium,
-      ),
+            post.user?.avatar,
 
-      post.image?.medium,
+            ...(post.images || []).map(
+              (img) =>
 
-      post.thumbnail,
-    ]
-  ).filter(Boolean);
+                img.medium ||
+                img.original ||
+                img.thumb
+            ),
+
+            post.thumbnail,
+          ]
+        )
+        .filter(
+          Boolean
+        ) as string[];
+
+    }, [
+      posts,
+    ]);
 
   useImagePrefetch(
-    imageUrls as string[]
+    imageUrls
   );
 
   return {

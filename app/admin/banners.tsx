@@ -2,15 +2,12 @@ import {
   View,
   TextInput,
   FlatList,
+  Alert,
 } from 'react-native';
 
 import {
   useState,
 } from 'react';
-
-import {
-  serverTimestamp,
-} from 'firebase/firestore';
 
 import Screen
 from '../../components/ui/Screen';
@@ -27,8 +24,9 @@ from '../../components/ui/AppText';
 import Card
 from '../../components/ui/Card';
 
-import useImagePicker
-from '../../hooks/useImagePicker';
+import useImagePicker, {
+  PickedImage,
+} from '../../hooks/useImagePicker';
 
 import {
   uploadImage,
@@ -93,35 +91,71 @@ export default function AdminBannersScreen() {
 
       setUploading(true);
 
-      const imageUri =
-        await pickImage();
+      // =========================
+      // PICK IMAGE
+      // =========================
+      const picked =
+        await pickImage({
 
-      if (!imageUri) {
+          multiple: false,
+        });
+
+      if (
+        !picked ||
+        picked.length === 0
+      ) {
         return;
       }
 
-      const imageUrl =
+      const image =
+        picked[0] as PickedImage;
+
+      // =========================
+      // UPLOAD IMAGE
+      // =========================
+      const uploadedImage =
         await uploadImage(
-          imageUri
+
+          image.uri,
+
+          'banners'
         );
 
+      console.log(
+        'BANNER IMAGE:',
+        uploadedImage
+      );
+
+      // =========================
+      // CREATE BANNER
+      // =========================
       await createBanner({
 
-        title,
+        title:
+          title.trim(),
 
-        subtitle,
+        subtitle:
+          subtitle.trim(),
 
         image:
-          imageUrl,
+          uploadedImage,
 
         active: true,
 
         order:
           banners.length + 1,
 
-        createdAt:
-          serverTimestamp() as any,
+        actionType:
+          'route',
+
+        actionValue:
+          '/',
       });
+
+      Alert.alert(
+        'Éxito',
+        'Banner creado'
+      );
 
       setTitle('');
       setSubtitle('');
@@ -129,7 +163,13 @@ export default function AdminBannersScreen() {
     } catch (error) {
 
       console.log(
+        'CREATE BANNER ERROR:',
         error
+      );
+
+      Alert.alert(
+        'Error',
+        'No se pudo crear el banner'
       );
 
     } finally {
@@ -183,6 +223,7 @@ export default function AdminBannersScreen() {
               Admin Banners
             </AppText>
 
+            {/* TITLE */}
             <TextInput
               placeholder=
                 "Título"
@@ -219,6 +260,7 @@ export default function AdminBannersScreen() {
               }}
             />
 
+            {/* SUBTITLE */}
             <TextInput
               placeholder=
                 "Subtítulo"
@@ -255,6 +297,7 @@ export default function AdminBannersScreen() {
               }}
             />
 
+            {/* BUTTON */}
             <AppButton
               title={
                 uploading
@@ -267,6 +310,7 @@ export default function AdminBannersScreen() {
               }
             />
 
+            {/* LIST */}
             <AppText
               style={{
 

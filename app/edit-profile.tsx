@@ -16,32 +16,24 @@ import {
   Image,
 } from 'expo-image';
 
-import Screen
-from '../components/ui/Screen';
+import Screen from '../components/ui/Screen';
 
-import Header
-from '../components/ui/Header';
+import Header from '../components/ui/Header';
 
-import Container
-from '../components/ui/Container';
+import Container from '../components/ui/Container';
 
-import AppButton
-from '../components/ui/AppButton';
+import AppButton from '../components/ui/AppButton';
 
-import AppText
-from '../components/ui/AppText';
+import AppText from '../components/ui/AppText';
 
 import {
   SPACING,
   RADIUS,
 } from '../theme';
 
-import useTheme
-from '../hooks/useTheme';
+import useTheme from '../hooks/useTheme';
 
-import useImagePicker, {
-  PickedImage,
-} from '../hooks/useImagePicker';
+import useImagePicker from '../hooks/useImagePicker';
 
 import {
   uploadImage,
@@ -83,12 +75,12 @@ export default function EditProfileScreen() {
     setLoading,
   ] = useState(false);
 
-const [
-  avatar,
-  setAvatar,
-] = useState<string>(
-  user?.avatar || ''
-);
+  const [
+    avatar,
+    setAvatar,
+  ] = useState<string>(
+    user?.avatar || ''
+  );
 
   const [
     name,
@@ -104,24 +96,40 @@ const [
     user?.bio || ''
   );
 
+  // =========================
+  // PICK AVATAR
+  // =========================
   async function handlePickAvatar() {
 
-    const image:
-      PickedImage | null =
-        await pickImage();
+    const images =
+      await pickImage({
 
-    if (!image?.uri) {
+        multiple: false,
+      });
+
+    if (
+      !images ||
+      images.length === 0
+    ) {
       return;
     }
+
+    const image =
+      images[0];
 
     setAvatar(
       image.uri
     );
   }
 
+  // =========================
+  // SAVE
+  // =========================
   async function handleSave() {
 
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     try {
 
@@ -130,21 +138,41 @@ const [
       let avatarUrl =
         user.avatar || '';
 
+      // =========================
+      // UPLOAD NEW AVATAR
+      // =========================
       if (
+
         avatar &&
+
         avatar !== user.avatar
       ) {
 
+        console.log(
+          'UPLOADING AVATAR:',
+          avatar
+        );
+
         const uploadedAvatar =
           await uploadImage(
+
             avatar,
+
             'avatars'
           );
+
+        console.log(
+          'UPLOADED AVATAR:',
+          uploadedAvatar
+        );
 
         avatarUrl =
           uploadedAvatar.original;
       }
 
+      // =========================
+      // UPDATE USER
+      // =========================
       const updatedUser = {
 
         ...user,
@@ -183,10 +211,15 @@ const [
 
     } catch (error) {
 
-      console.log(error);
+      console.log(
+        'EDIT PROFILE ERROR:',
+        error
+      );
 
       Alert.alert(
+
         'Error',
+
         'No se pudo actualizar el perfil'
       );
 
@@ -224,7 +257,11 @@ const [
           {avatar ? (
 
             <Image
-              source={avatar}
+              source={{
+                uri: avatar,
+              }}
+
+              contentFit="cover"
 
               style={{
 
@@ -281,8 +318,7 @@ const [
           )}
 
           <AppButton
-            title=
-              "Seleccionar Avatar"
+            title="Seleccionar Avatar"
 
             onPress={
               handlePickAvatar
@@ -301,6 +337,7 @@ const [
 
           <AppText
             style={{
+
               marginBottom: 8,
 
               fontWeight:
@@ -359,6 +396,7 @@ const [
 
           <AppText
             style={{
+
               marginBottom: 8,
 
               fontWeight:

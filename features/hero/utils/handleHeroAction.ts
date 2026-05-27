@@ -6,12 +6,12 @@ import {
 } from 'expo-router';
 
 import {
-  HeroSlide,
-} from '../types/hero-slide.types';
+  Banner,
+} from '../types/banner.types';
 
 export async function handleHeroAction(
 
-  slide: HeroSlide,
+  slide: Banner,
 
   router: Router,
 ) {
