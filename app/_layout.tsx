@@ -8,8 +8,11 @@ import {
   useEffect,
 } from 'react';
 
-import Loader
-from '../components/ui/Loader';
+import * as SplashScreen
+from 'expo-splash-screen';
+
+import LoaderFullScreen
+from '@/components/ui/LoaderFullScreen';
 
 import {
   useUserStore,
@@ -22,6 +25,11 @@ import {
 import {
   TabBarProvider,
 } from '../context/TabBarContext';
+
+// =========================
+// KEEP SPLASH
+// =========================
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
 
@@ -38,19 +46,43 @@ export default function RootLayout() {
   const pathname =
     usePathname();
 
+  // =========================
+  // INIT AUTH
+  // =========================
   useEffect(() => {
 
     initAuthListener();
 
   }, []);
 
+  // =========================
+  // HIDE SPLASH
+  // =========================
+  useEffect(() => {
+
+    if (!loading) {
+
+      SplashScreen.hideAsync();
+    }
+
+  }, [loading]);
+
+  // =========================
+  // GLOBAL LOADING
+  // =========================
   if (loading) {
-    return <Loader />;
+
+    return (
+      <LoaderFullScreen />
+    );
   }
 
   const isAuthRoute =
     pathname === '/login';
 
+  // =========================
+  // REDIRECT TO LOGIN
+  // =========================
   if (
     !user &&
     !isAuthRoute
@@ -63,6 +95,9 @@ export default function RootLayout() {
     );
   }
 
+  // =========================
+  // REDIRECT TO APP
+  // =========================
   if (
     user &&
     isAuthRoute

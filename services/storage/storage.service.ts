@@ -108,13 +108,7 @@ export async function uploadImage(
   // WEB
   // =========================
   if (
-
-    Platform.OS === 'web' &&
-
-    [
-      'banners',
-      'avatars',
-    ].includes(folder)
+    Platform.OS === 'web'
   ) {
 
     const compressedFile =
@@ -124,9 +118,7 @@ export async function uploadImage(
 
     const storageRef =
       ref(
-
         storage,
-
         `${folder}/${filename}.jpg`
       );
 
@@ -141,30 +133,16 @@ export async function uploadImage(
       );
 
     return {
-
       original: url,
-
       medium: url,
-
       thumb: url,
     };
   }
 
   // =========================
-  // ORIGINAL
+  // MOBILE
   // =========================
-  const originalUrl =
-    await uploadSingleImage(
-
-      uri,
-
-      `${folder}/original/${filename}.webp`
-    );
-
-  // =========================
-  // MEDIUM
-  // =========================
-  const mediumImage =
+  const compressed =
     await manipulateAsync(
 
       uri,
@@ -172,70 +150,30 @@ export async function uploadImage(
       [
         {
           resize: {
-            width: 900,
+            width: 1200,
           },
         },
       ],
 
       {
-
-        compress: 0.7,
+        compress: 0.75,
 
         format:
           SaveFormat.WEBP,
       }
     );
 
-  const mediumUrl =
+  const url =
     await uploadSingleImage(
 
-      mediumImage.uri,
+      compressed.uri,
 
-      `${folder}/medium/${filename}.webp`
-    );
-
-  // =========================
-  // THUMB
-  // =========================
-  const thumbImage =
-    await manipulateAsync(
-
-      uri,
-
-      [
-        {
-          resize: {
-            width: 300,
-          },
-        },
-      ],
-
-      {
-
-        compress: 0.6,
-
-        format:
-          SaveFormat.WEBP,
-      }
-    );
-
-  const thumbUrl =
-    await uploadSingleImage(
-
-      thumbImage.uri,
-
-      `${folder}/thumb/${filename}.webp`
+      `${folder}/${filename}.webp`
     );
 
   return {
-
-    original:
-      originalUrl,
-
-    medium:
-      mediumUrl,
-
-    thumb:
-      thumbUrl,
+    original: url,
+    medium: url,
+    thumb: url,
   };
 }

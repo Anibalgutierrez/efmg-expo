@@ -4,6 +4,7 @@ import {
 
 import {
   Post,
+  PostImage,
 } from '../types/post.types';
 
 type PostsStore = {
@@ -14,9 +15,6 @@ type PostsStore = {
     posts: Post[]
   ) => void;
 
-  // =========================
-  // NEW
-  // =========================
   mergePosts: (
     posts: Post[]
   ) => void;
@@ -53,6 +51,107 @@ type PostsStore = {
   clearPosts: () => void;
 };
 
+// =========================
+// IMAGE COMPARE
+// =========================
+function areImagesEqual(
+  prevImages?: PostImage[],
+  nextImages?: PostImage[],
+) {
+
+  if (
+    prevImages === nextImages
+  ) {
+    return true;
+  }
+
+  if (
+    !prevImages ||
+    !nextImages
+  ) {
+    return false;
+  }
+
+  if (
+    prevImages.length !==
+    nextImages.length
+  ) {
+    return false;
+  }
+
+  for (
+    let i = 0;
+    i < prevImages.length;
+    i++
+  ) {
+
+    const prev =
+      prevImages[i];
+
+    const next =
+      nextImages[i];
+
+    if (
+
+      prev.original !==
+        next.original ||
+
+      prev.medium !==
+        next.medium ||
+
+      prev.thumb !==
+        next.thumb
+
+    ) {
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// =========================
+// POST COMPARE
+// =========================
+function arePostsEqual(
+  prev: Post,
+  next: Post,
+) {
+
+  return (
+
+    prev.likesCount ===
+      next.likesCount &&
+
+    prev.commentsCount ===
+      next.commentsCount &&
+
+    prev.content ===
+      next.content &&
+
+    prev.thumbnail ===
+      next.thumbnail &&
+
+    prev.reelUrl ===
+      next.reelUrl &&
+
+    prev.user.id ===
+      next.user.id &&
+
+    prev.user.name ===
+      next.user.name &&
+
+    prev.user.avatar ===
+      next.user.avatar &&
+
+    areImagesEqual(
+      prev.images,
+      next.images
+    )
+  );
+}
+
 export const usePostsStore =
   create<PostsStore>()(
 
@@ -77,6 +176,17 @@ export const usePostsStore =
       ) => set(
         (state) => {
 
+          // QUICK EXIT
+          if (
+            incomingPosts.length === 0
+          ) {
+
+            return state;
+          }
+
+          // =========================
+          // EXISTING MAP
+          // =========================
           const existingMap =
             new Map(
 
@@ -88,6 +198,12 @@ export const usePostsStore =
               )
             );
 
+          let changed =
+            false;
+
+          // =========================
+          // MERGED TOP
+          // =========================
           const mergedTop =
             incomingPosts.map(
               (incoming) => {
@@ -99,59 +215,80 @@ export const usePostsStore =
 
                 // NEW POST
                 if (!existing) {
+
+                  changed =
+                    true;
+
                   return incoming;
                 }
 
-                // SAME DATA
-                const isSame =
+                // SAME
+                if (
 
-                  existing.likesCount ===
-                    incoming.likesCount &&
+                  arePostsEqual(
+                    existing,
+                    incoming
+                  )
 
-                  existing.commentsCount ===
-                    incoming.commentsCount &&
+                ) {
 
-                  existing.content ===
-                    incoming.content &&
+                  return existing;
+                }
 
-                  JSON.stringify(
-                    existing.images
-                  ) ===
-                  JSON.stringify(
-                    incoming.images
-                  ) &&
+                // CHANGED
+                changed =
+                  true;
 
-                  existing.thumbnail ===
-                    incoming.thumbnail;
-
-                // PRESERVE REFERENCE
-                return isSame
-                  ? existing
-                  : incoming;
+                return incoming;
               }
             );
 
-          // KEEP PAGINATED POSTS
+          // =========================
+          // KEEP PAGINATED
+          // =========================
+          const incomingIds =
+            new Set(
+
+              incomingPosts.map(
+                (post) =>
+                  post.id
+              )
+            );
+
           const remainingPosts =
             state.posts.filter(
               (post) =>
 
-                !incomingPosts.some(
-                  (incoming) =>
-
-                    incoming.id ===
-                    post.id
+                !incomingIds.has(
+                  post.id
                 )
             );
 
+          const finalPosts = [
+
+            ...mergedTop,
+
+            ...remainingPosts,
+          ];
+
+          // =========================
+          // NO CHANGES
+          // =========================
+          if (
+
+            !changed &&
+
+            finalPosts.length ===
+              state.posts.length
+
+          ) {
+
+            return state;
+          }
+
           return {
-
-            posts: [
-
-              ...mergedTop,
-
-              ...remainingPosts,
-            ],
+            posts:
+              finalPosts,
           };
         }
       ),
@@ -162,6 +299,12 @@ export const usePostsStore =
       appendPosts: (
         newPosts
       ) => {
+
+        if (
+          newPosts.length === 0
+        ) {
+          return;
+        }
 
         const existingIds =
           new Set(
@@ -174,6 +317,7 @@ export const usePostsStore =
         const filtered =
           newPosts.filter(
             (post) =>
+
               !existingIds.has(
                 post.id
               )
@@ -212,6 +356,7 @@ export const usePostsStore =
 
             ...state.posts.filter(
               (post) =>
+
                 post.id !==
                 newPost.id
             ),
@@ -230,6 +375,7 @@ export const usePostsStore =
           posts:
             state.posts.filter(
               (post) =>
+
                 post.id !==
                 postId
             ),
@@ -250,7 +396,7 @@ export const usePostsStore =
               (post) =>
 
                 post.id ===
-                postId
+                  postId
 
                   ? updater(post)
 
@@ -273,7 +419,7 @@ export const usePostsStore =
               (post) =>
 
                 post.id ===
-                postId
+                  postId
 
                   ? {
 
@@ -301,7 +447,7 @@ export const usePostsStore =
               (post) =>
 
                 post.id ===
-                postId
+                  postId
 
                   ? {
 

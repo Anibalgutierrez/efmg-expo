@@ -7,15 +7,10 @@
     "icon": "./assets/LogoLobasNegroIco192.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
-
-"assetBundlePatterns": [
-      "**/*"
-    ],
-
     "splash": {
       "image": "./assets/LogoLobasNegroIco192.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0B0F1A"
     },
     "ios": {
       "supportsTablet": true
@@ -29,7 +24,9 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/LogoLobasNegroIco192.png",
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/icons/icon-light.png",
       "lang": "es"
     },
     "plugins": [

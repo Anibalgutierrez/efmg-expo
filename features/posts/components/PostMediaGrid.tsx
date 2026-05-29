@@ -6,6 +6,7 @@ import {
 
 import {
   memo,
+  useCallback,
   useMemo,
   useState,
 } from 'react';
@@ -19,13 +20,66 @@ import {
 } from '../types/post.types';
 
 import ImageViewerModal
-from './ImageViewerModal';
+  from './ImageViewerModal';
 
 type Props = {
   postId: string;
   images: PostImage[];
   height: number;
 };
+
+// =========================
+// IMAGE COMPARE
+// =========================
+function areImagesEqual(
+  prevImages: PostImage[],
+  nextImages: PostImage[],
+) {
+
+  if (
+    prevImages === nextImages
+  ) {
+    return true;
+  }
+
+  if (
+    prevImages.length !==
+    nextImages.length
+  ) {
+    return false;
+  }
+
+  for (
+    let i = 0;
+    i < prevImages.length;
+    i++
+  ) {
+
+    const prev =
+      prevImages[i];
+
+    const next =
+      nextImages[i];
+
+    if (
+
+      prev.original !==
+        next.original ||
+
+      prev.medium !==
+        next.medium ||
+
+      prev.thumb !==
+        next.thumb
+
+    ) {
+
+      return false;
+    }
+  }
+
+  return true;
+}
 
 function PostMediaGrid({
   postId,
@@ -52,9 +106,9 @@ function PostMediaGrid({
       return images.map(
         (image) =>
 
-          image.original ||
+          // FEED = NEVER ORIGINAL
           image.medium ||
-          image.thumb,
+          image.thumb
       );
 
     }, [images]);
@@ -62,18 +116,32 @@ function PostMediaGrid({
   // =========================
   // OPEN VIEWER
   // =========================
-  const openViewer = (
-    index: number
-  ) => {
+  const openViewer =
+    useCallback((
+      index: number
+    ) => {
 
-    setActiveIndex(
-      index
-    );
+      setActiveIndex(
+        index
+      );
 
-    setViewerVisible(
-      true
-    );
-  };
+      setViewerVisible(
+        true
+      );
+
+    }, []);
+
+  // =========================
+  // CLOSE VIEWER
+  // =========================
+  const closeViewer =
+    useCallback(() => {
+
+      setViewerVisible(
+        false
+      );
+
+    }, []);
 
   // =========================
   // IMAGE ITEM
@@ -82,14 +150,20 @@ function PostMediaGrid({
     image: PostImage,
     index: number,
     customStyle?: any,
-    overlayText?: string,
   ) => {
 
+    // =========================
+    // FEED IMAGE
+    // =========================
     const imageUrl =
 
-      image.original ||
       image.medium ||
       image.thumb;
+
+    // SAFETY
+    if (!imageUrl) {
+      return null;
+    }
 
     return (
 
@@ -121,29 +195,14 @@ function PostMediaGrid({
           contentFit=
             "cover"
 
-          transition={120}
+          transition={80}
+
+          allowDownscaling
 
           style={
             styles.image
           }
         />
-
-        {!!overlayText && (
-
-          <View
-            style={
-              styles.overlay
-            }
-          >
-
-            <View
-              style={
-                styles.overlayBackground
-              }
-            />
-
-          </View>
-        )}
 
       </Pressable>
     );
@@ -174,25 +233,28 @@ function PostMediaGrid({
 
         </View>
 
-        <ImageViewerModal
-          visible={
-            viewerVisible
-          }
+        {/* MOUNT ONLY WHEN OPEN */}
+        {viewerVisible && (
 
-          images={
-            imageUrls
-          }
+          <ImageViewerModal
+            visible={
+              viewerVisible
+            }
 
-          initialIndex={
-            activeIndex
-          }
+            images={
+              imageUrls
+            }
 
-          onClose={() =>
-            setViewerVisible(
-              false
-            )
-          }
-        />
+            initialIndex={
+              activeIndex
+            }
+
+            onClose={
+              closeViewer
+            }
+          />
+
+        )}
 
       </>
     );
@@ -230,25 +292,27 @@ function PostMediaGrid({
 
         </View>
 
-        <ImageViewerModal
-          visible={
-            viewerVisible
-          }
+        {viewerVisible && (
 
-          images={
-            imageUrls
-          }
+          <ImageViewerModal
+            visible={
+              viewerVisible
+            }
 
-          initialIndex={
-            activeIndex
-          }
+            images={
+              imageUrls
+            }
 
-          onClose={() =>
-            setViewerVisible(
-              false
-            )
-          }
-        />
+            initialIndex={
+              activeIndex
+            }
+
+            onClose={
+              closeViewer
+            }
+          />
+
+        )}
 
       </>
     );
@@ -303,25 +367,27 @@ function PostMediaGrid({
 
         </View>
 
-        <ImageViewerModal
-          visible={
-            viewerVisible
-          }
+        {viewerVisible && (
 
-          images={
-            imageUrls
-          }
+          <ImageViewerModal
+            visible={
+              viewerVisible
+            }
 
-          initialIndex={
-            activeIndex
-          }
+            images={
+              imageUrls
+            }
 
-          onClose={() =>
-            setViewerVisible(
-              false
-            )
-          }
-        />
+            initialIndex={
+              activeIndex
+            }
+
+            onClose={
+              closeViewer
+            }
+          />
+
+        )}
 
       </>
     );
@@ -365,32 +431,31 @@ function PostMediaGrid({
           images[3],
           3,
           styles.flexImage,
-          images.length > 4
-            ? `+${images.length - 4}`
-            : undefined,
         )}
 
       </View>
 
-      <ImageViewerModal
-        visible={
-          viewerVisible
-        }
+      {viewerVisible && (
 
-        images={
-          imageUrls
-        }
+        <ImageViewerModal
+          visible={
+            viewerVisible
+          }
 
-        initialIndex={
-          activeIndex
-        }
+          images={
+            imageUrls
+          }
 
-        onClose={() =>
-          setViewerVisible(
-            false
-          )
-        }
-      />
+          initialIndex={
+            activeIndex
+          }
+
+          onClose={
+            closeViewer
+          }
+        />
+
+      )}
 
     </>
   );
@@ -446,39 +511,27 @@ const styles =
 
       height: '100%',
     },
-
-    overlay: {
-
-      position:
-        'absolute',
-
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-    },
-
-    overlayBackground: {
-
-      position:
-        'absolute',
-
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-
-      backgroundColor:
-        'rgba(0,0,0,0.38)',
-    },
   });
 
 export default memo(
-  PostMediaGrid
+  PostMediaGrid,
+  (
+    prev,
+    next
+  ) => {
+
+    return (
+
+      prev.postId ===
+        next.postId &&
+
+      prev.height ===
+        next.height &&
+
+      areImagesEqual(
+        prev.images,
+        next.images
+      )
+    );
+  }
 );

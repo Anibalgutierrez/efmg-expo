@@ -16,7 +16,9 @@ import {
   useRouter,
 } from 'expo-router';
 
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Ionicons,
+} from '@expo/vector-icons';
 
 import {
   Image,
@@ -62,9 +64,20 @@ import {
 import {
   Post,
 } from '../types/post.types';
-import PostHeader from './shared/PostHeader';
-import PostActions from './shared/PostActions';
-import { formatPostDate } from '../utils/formatPostDate';
+
+import PostHeader
+  from './shared/PostHeader';
+
+import PostActions
+  from './shared/PostActions';
+
+import {
+  formatPostDate,
+} from '../utils/formatPostDate';
+
+import {
+  getImageUri,
+} from '../../../utils/getImageUri';
 
 type Props = {
   post: Post;
@@ -129,41 +142,81 @@ function ReelCard({
   // DATE
   // =========================
   const createdAtText =
-  useMemo(() => {
+    useMemo(() => {
 
-    return formatPostDate(
-      post.createdAt
-    );
+      return formatPostDate(
+        post.createdAt
+      );
 
-  }, [
-    post.createdAt,
-  ]);
+    }, [
+      post.createdAt,
+    ]);
 
   // =========================
-  // THUMBNAIL
+  // THUMB
   // =========================
   const thumbnail =
     useMemo(() => {
 
-      return post.thumbnail || '';
+      return getImageUri(
+        post.thumbnail
+      );
 
     }, [
       post.thumbnail,
     ]);
 
   // =========================
+  // HEIGHT
+  // =========================
+  const mediaHeight =
+    useMemo(() => {
+
+      return width > 500
+        ? 520
+        : 420;
+
+    }, [width]);
+
+  // =========================
   // ACTIONS
   // =========================
-  
   const openComments =
-  useCallback(() => {
+    useCallback(() => {
 
-    setCommentsVisible(
-      true
-    );
+      setCommentsVisible(
+        true
+      );
 
-  }, []);
-  
+    }, []);
+
+  const closeComments =
+    useCallback(() => {
+
+      setCommentsVisible(
+        false
+      );
+
+    }, []);
+
+  const openDeleteModal =
+    useCallback(() => {
+
+      setDeleteVisible(
+        true
+      );
+
+    }, []);
+
+  const closeDeleteModal =
+    useCallback(() => {
+
+      setDeleteVisible(
+        false
+      );
+
+    }, []);
+
   const openProfile =
     useCallback(() => {
 
@@ -198,6 +251,9 @@ function ReelCard({
       router,
     ]);
 
+  // =========================
+  // DELETE
+  // =========================
   const handleDeletePost =
     useCallback(async () => {
 
@@ -235,14 +291,12 @@ function ReelCard({
 
         {/* HEADER */}
         <PostHeader
-  post={post}
-  createdAtText={createdAtText}
-  isOwner={isOwner}
-  onPressProfile={openProfile}
-  onPressDelete={() =>
-    setDeleteVisible(true)
-  }
-/>
+          post={post}
+          createdAtText={createdAtText}
+          isOwner={isOwner}
+          onPressProfile={openProfile}
+          onPressDelete={openDeleteModal}
+        />
 
         {/* CONTENT */}
         {!!post.content && (
@@ -285,22 +339,20 @@ function ReelCard({
                   post.id
                 }
 
-                cachePolicy=
-                "memory-disk"
+                cachePolicy="memory-disk"
 
-                contentFit=
-                "cover"
+                allowDownscaling
 
-                transition={200}
+                contentFit="cover"
+
+                transition={120}
 
                 style={{
 
                   width: '100%',
 
                   height:
-                    width > 500
-                      ? 520
-                      : 420,
+                    mediaHeight,
 
                   borderRadius: 18,
 
@@ -325,10 +377,12 @@ function ReelCard({
                   left: '50%',
 
                   transform: [
+
                     {
                       translateX:
                         -40,
                     },
+
                     {
                       translateY:
                         -40,
@@ -354,9 +408,7 @@ function ReelCard({
 
                 <Ionicons
                   name="play"
-
                   size={44}
-
                   color="white"
                 />
 
@@ -372,15 +424,16 @@ function ReelCard({
 
         {/* ACTIONS */}
         <PostActions
-  liked={liked}
-  likes={likes}
-  commentsCount={post.commentsCount}
-  onLike={toggleLike}
-  onComments={openComments}
-/>
+          liked={liked}
+          likes={likes}
+          commentsCount={post.commentsCount}
+          onLike={toggleLike}
+          onComments={openComments}
+        />
 
       </Card>
 
+      {/* COMMENTS */}
       {commentsVisible && (
 
         <CommentsModal
@@ -388,10 +441,8 @@ function ReelCard({
             commentsVisible
           }
 
-          onClose={() =>
-            setCommentsVisible(
-              false
-            )
+          onClose={
+            closeComments
           }
 
           postId={
@@ -405,21 +456,20 @@ function ReelCard({
 
       )}
 
+      {/* DELETE */}
       <ConfirmModal
         visible={
           deleteVisible
         }
 
         title=
-        "Eliminar reel"
+          "Eliminar reel"
 
         description=
-        "Esta acción no se puede deshacer."
+          "Esta acción no se puede deshacer."
 
-        onCancel={() =>
-          setDeleteVisible(
-            false
-          )
+        onCancel={
+          closeDeleteModal
         }
 
         onConfirm={
@@ -437,18 +487,24 @@ export default memo(
   (prev, next) => (
 
     prev.post.id ===
-    next.post.id &&
+      next.post.id &&
 
     prev.post.likesCount ===
-    next.post.likesCount &&
+      next.post.likesCount &&
 
     prev.post.commentsCount ===
-    next.post.commentsCount &&
+      next.post.commentsCount &&
 
     prev.post.content ===
-    next.post.content &&
+      next.post.content &&
 
     prev.post.thumbnail ===
-    next.post.thumbnail
+      next.post.thumbnail &&
+
+    prev.post.user.id ===
+      next.post.user.id &&
+
+    prev.post.user.name ===
+      next.post.user.name
   )
 );

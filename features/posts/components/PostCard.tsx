@@ -2,7 +2,7 @@ import {
   View,
   Pressable,
   Keyboard,
-  useWindowDimensions,
+  Dimensions,
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -84,16 +84,80 @@ type Props = {
   post: Post;
 };
 
+// =========================
+// STATIC WIDTH
+// =========================
+const SCREEN_WIDTH =
+  Dimensions.get(
+    'window'
+  ).width;
+
+// =========================
+// IMAGE COMPARE
+// =========================
+function areImagesEqual(
+  prevImages?: any[],
+  nextImages?: any[],
+) {
+
+  if (
+    prevImages === nextImages
+  ) {
+    return true;
+  }
+
+  if (
+    !prevImages ||
+    !nextImages
+  ) {
+    return false;
+  }
+
+  if (
+    prevImages.length !==
+    nextImages.length
+  ) {
+    return false;
+  }
+
+  for (
+    let i = 0;
+    i < prevImages.length;
+    i++
+  ) {
+
+    const prev =
+      prevImages[i];
+
+    const next =
+      nextImages[i];
+
+    if (
+
+      prev.original !==
+        next.original ||
+
+      prev.medium !==
+        next.medium ||
+
+      prev.thumb !==
+        next.thumb
+
+    ) {
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function PostCard({
   post,
 }: Props) {
 
   const router =
     useRouter();
-
-  const {
-    width,
-  } = useWindowDimensions();
 
   const {
     COLORS,
@@ -153,38 +217,32 @@ function PostCard({
   // IMAGES
   // =========================
   const postImages =
-    useMemo(() => {
-
-      return post.images || [];
-
-    }, [
-      post.images,
-    ]);
+    post.images || [];
 
   // =========================
   // HEIGHT
   // =========================
   const mediaHeight =
-    useMemo(() => {
 
-      return width > 500
-        ? (
-            post.type ===
-            'reel'
-              ? 520
-              : 360
-          )
-        : (
-            post.type ===
-            'reel'
-              ? 420
-              : 240
-          );
+    SCREEN_WIDTH > 500
 
-    }, [
-      width,
-      post.type,
-    ]);
+      ? (
+          post.type ===
+          'reel'
+
+            ? 520
+
+            : 360
+        )
+
+      : (
+          post.type ===
+          'reel'
+
+            ? 420
+
+            : 240
+        );
 
   // =========================
   // ACTIONS
@@ -453,43 +511,53 @@ function PostCard({
 
       </Card>
 
-      <CommentsModal
-        visible={
-          commentsVisible
-        }
+      {/* COMMENTS */}
+      {commentsVisible && (
 
-        onClose={
-          closeComments
-        }
+        <CommentsModal
+          visible={
+            commentsVisible
+          }
 
-        postId={
-          post.id
-        }
+          onClose={
+            closeComments
+          }
 
-        postOwnerId={
-          post.user.id
-        }
-      />
+          postId={
+            post.id
+          }
 
-      <ConfirmModal
-        visible={
-          deleteVisible
-        }
+          postOwnerId={
+            post.user.id
+          }
+        />
 
-        title=
-          "Eliminar publicación"
+      )}
 
-        description=
-          "Esta acción no se puede deshacer."
+      {/* DELETE */}
+      {deleteVisible && (
 
-        onCancel={
-          closeDeleteModal
-        }
+        <ConfirmModal
+          visible={
+            deleteVisible
+          }
 
-        onConfirm={
-          handleDeletePost
-        }
-      />
+          title=
+            "Eliminar publicación"
+
+          description=
+            "Esta acción no se puede deshacer."
+
+          onCancel={
+            closeDeleteModal
+          }
+
+          onConfirm={
+            handleDeletePost
+          }
+        />
+
+      )}
 
     </>
   );
@@ -513,12 +581,10 @@ export default memo(
       prev.post.content ===
         next.post.content &&
 
-      JSON.stringify(
-        prev.post.images
-      ) ===
-        JSON.stringify(
-          next.post.images
-        ) &&
+      areImagesEqual(
+        prev.post.images,
+        next.post.images
+      ) &&
 
       prev.post.thumbnail ===
         next.post.thumbnail

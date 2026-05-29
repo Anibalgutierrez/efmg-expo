@@ -46,7 +46,11 @@ export default function TabsLayout() {
   return (
 
     <Tabs
+
       screenOptions={{
+
+        lazy: true,
+        freezeOnBlur: true,
 
         headerShown: false,
 
@@ -201,7 +205,7 @@ export default function TabsLayout() {
           ),
         }}
       />
-      
+
 
     </Tabs>
   );

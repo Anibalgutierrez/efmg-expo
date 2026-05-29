@@ -7,7 +7,7 @@ import {
 
 import {
   Banner,
-} from '../../../types/banner.types';
+} from '../types/banner.types';
 
 export async function handleBannerAction(
 

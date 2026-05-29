@@ -59,6 +59,7 @@ import usePosts
 import {
   Post,
 } from '../../features/posts/types/post.types';
+import FeedSkeleton from '@/features/posts/components/FeedSkeleton';
 
 export default function HomeScreen() {
 
@@ -324,15 +325,20 @@ export default function HomeScreen() {
           // =========================
           ListEmptyComponent={
 
-            loading
-              ? <Loader />
-              : (
-                <EmptyState
-                  title=
-                    "No hay posts todavía."
-                />
-              )
-          }
+  loading &&
+  posts.length === 0
+
+    ? <FeedSkeleton />
+
+    : (
+
+      <EmptyState
+        title=
+          "No hay posts todavía."
+      />
+
+    )
+}
 
           // =========================
           // CONTENT

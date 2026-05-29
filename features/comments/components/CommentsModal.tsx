@@ -58,13 +58,34 @@ type Props = {
   postOwnerId: string;
 };
 
+type CommentItemProps = {
+  item: any;
+  COLORS: any;
+  isOwner: boolean;
+  onDelete: (
+    commentId: string
+  ) => void;
+};
+
 const CommentItem = memo(
   ({
     item,
     COLORS,
     isOwner,
     onDelete,
-  }: any) => {
+  }: CommentItemProps) => {
+
+    const handleDelete =
+      useCallback(() => {
+
+        onDelete(
+          item.id
+        );
+
+      }, [
+        item.id,
+        onDelete,
+      ]);
 
     return (
 
@@ -147,10 +168,8 @@ const CommentItem = memo(
             {isOwner && (
 
               <Pressable
-                onPress={() =>
-                  onDelete(
-                    item.id
-                  )
+                onPress={
+                  handleDelete
                 }
 
                 hitSlop={10}
@@ -190,7 +209,10 @@ const CommentItem = memo(
   }
 );
 
-export default function CommentsModal({
+CommentItem.displayName =
+  'CommentItem';
+
+function CommentsModal({
 
   visible,
 
@@ -228,95 +250,108 @@ export default function CommentsModal({
   // =========================
   // CREATE COMMENT
   // =========================
-  async function handleComment() {
+  const handleComment =
+    useCallback(async () => {
 
-    if (
-      !text.trim()
-    ) {
-      return;
-    }
+      const trimmed =
+        text.trim();
 
-    if (!user) {
-      return;
-    }
+      if (
+        !trimmed ||
+        !user
+      ) {
+        return;
+      }
 
-    try {
+      try {
 
-      setLoading(true);
+        setLoading(true);
 
-      await createComment(
-  postId,
-  {
-    text,
+        await createComment(
+          postId,
+          {
+            text: trimmed,
 
-    createdAt:
-      new Date() as any,
+            createdAt:
+              new Date() as any,
 
-    user: {
+            user: {
 
-      id:
-        user.id,
+              id:
+                user.id,
 
-      name:
-        user.name,
+              name:
+                user.name,
 
-      avatar:
-        user.avatar || '',
+              avatar:
+                user.avatar || '',
 
-      bio:
-        user.bio || '',
+              bio:
+                user.bio || '',
 
-      followersCount:
-        user.followersCount || 0,
+              followersCount:
+                user.followersCount || 0,
 
-      followingCount:
-        user.followingCount || 0,
+              followingCount:
+                user.followingCount || 0,
 
-      postsCount:
-        user.postsCount || 0,
+              postsCount:
+                user.postsCount || 0,
 
-      role:
-        user.role,
-    },
-  }
-);
+              role:
+                user.role,
+            },
+          }
+        );
 
-      setText('');
+        setText('');
 
-    } catch (error) {
+      } catch (error) {
 
-      console.log(
-        error
-      );
+        console.log(
+          error
+        );
 
-    } finally {
+      } finally {
 
-      setLoading(false);
-    }
-  }
+        setLoading(false);
+      }
+
+    }, [
+      text,
+      user,
+      postId,
+    ]);
 
   // =========================
   // DELETE COMMENT
   // =========================
-  async function handleDeleteComment(
-    commentId: string
-  ) {
+  const handleDeleteComment =
+    useCallback(async (
+      commentId: string
+    ) => {
 
-    try {
+      try {
 
-      await deleteComment(
-        postId,
-        commentId
-      );
+        await deleteComment(
+          postId,
+          commentId
+        );
 
-    } catch (error) {
+      } catch (error) {
 
-      console.log(
-        error
-      );
-    }
-  }
+        console.log(
+          error
+        );
+      }
 
+    }, [
+      postId,
+    ]);
+
+  // =========================
+  // RENDER ITEM
+  // =========================
   const renderItem =
     useCallback(({
       item,
@@ -340,6 +375,7 @@ export default function CommentsModal({
     ), [
       COLORS,
       user?.id,
+      handleDeleteComment,
     ]);
 
   const keyExtractor =
@@ -476,7 +512,7 @@ export default function CommentsModal({
 
           estimatedItemSize={90}
 
-          removeClippedSubviews={false}
+          removeClippedSubviews
 
           keyboardShouldPersistTaps="handled"
 
@@ -598,3 +634,7 @@ export default function CommentsModal({
     </Modal>
   );
 }
+
+export default memo(
+  CommentsModal
+);

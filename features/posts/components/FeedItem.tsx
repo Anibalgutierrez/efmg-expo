@@ -10,6 +10,7 @@ import ReelCard
 
 import {
   Post,
+  PostImage,
 } from '../types/post.types';
 
 type Props = {
@@ -20,8 +21,8 @@ type Props = {
 // IMAGE COMPARE
 // =========================
 function areImagesEqual(
-  prevImages?: any[],
-  nextImages?: any[],
+  prevImages?: PostImage[],
+  nextImages?: PostImage[],
 ) {
 
   if (
@@ -57,6 +58,7 @@ function areImagesEqual(
       nextImages[i];
 
     if (
+
       prev.original !==
         next.original ||
 
@@ -65,6 +67,7 @@ function areImagesEqual(
 
       prev.thumb !==
         next.thumb
+
     ) {
 
       return false;
@@ -74,10 +77,68 @@ function areImagesEqual(
   return true;
 }
 
+// =========================
+// POST COMPARE
+// =========================
+function arePostsEqual(
+  prev: Post,
+  next: Post,
+) {
+
+  return (
+
+    // BASIC
+    prev.id ===
+      next.id &&
+
+    prev.type ===
+      next.type &&
+
+    prev.content ===
+      next.content &&
+
+    // COUNTS
+    prev.likesCount ===
+      next.likesCount &&
+
+    prev.commentsCount ===
+      next.commentsCount &&
+
+    // MEDIA
+    prev.thumbnail ===
+      next.thumbnail &&
+
+    prev.reelUrl ===
+      next.reelUrl &&
+
+    areImagesEqual(
+      prev.images,
+      next.images,
+    ) &&
+
+    // USER
+    prev.user.id ===
+      next.user.id &&
+
+    prev.user.name ===
+      next.user.name &&
+
+    prev.user.avatar ===
+      next.user.avatar &&
+
+    // DATE
+    prev.createdAt?.seconds ===
+      next.createdAt?.seconds
+  );
+}
+
 function FeedItem({
   post,
 }: Props) {
 
+  // =========================
+  // REEL
+  // =========================
   if (
     post.type ===
     'reel'
@@ -90,6 +151,9 @@ function FeedItem({
     );
   }
 
+  // =========================
+  // NORMAL POST
+  // =========================
   return (
     <PostCard
       post={post}
@@ -99,53 +163,14 @@ function FeedItem({
 
 export default memo(
   FeedItem,
-
   (
     prev,
     next
   ) => {
 
-    return (
-
-      // BASIC
-      prev.post.id ===
-        next.post.id &&
-
-      prev.post.type ===
-        next.post.type &&
-
-      prev.post.content ===
-        next.post.content &&
-
-      // COUNTS
-      prev.post.likesCount ===
-        next.post.likesCount &&
-
-      prev.post.commentsCount ===
-        next.post.commentsCount &&
-
-      // MEDIA
-      prev.post.thumbnail ===
-        next.post.thumbnail &&
-
-      prev.post.reelUrl ===
-        next.post.reelUrl &&
-
-      areImagesEqual(
-        prev.post.images,
-        next.post.images,
-      ) &&
-
-      // USER
-      prev.post.user.id ===
-        next.post.user.id &&
-
-      prev.post.user.name ===
-        next.post.user.name &&
-
-      // DATE
-      prev.post.createdAt?.seconds ===
-        next.post.createdAt?.seconds
+    return arePostsEqual(
+      prev.post,
+      next.post
     );
   }
 );

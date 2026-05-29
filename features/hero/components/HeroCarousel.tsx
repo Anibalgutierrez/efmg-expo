@@ -10,6 +10,8 @@ import {
   useRef,
   useState,
   memo,
+  useCallback,
+  useMemo,
 } from 'react';
 
 import {
@@ -34,10 +36,10 @@ import {
 } from 'expo-linear-gradient';
 
 import AppText
-from '../../../components/ui/AppText';
+  from '../../../components/ui/AppText';
 
 import useBanners
-from '../hooks/useBanners';
+  from '../hooks/useBanners';
 
 import {
   handleBannerAction,
@@ -52,12 +54,15 @@ import {
 } from '../../../theme';
 
 import useTheme
-from '../../../hooks/useTheme';
+  from '../../../hooks/useTheme';
 
 import {
   Banner,
   BannerImage,
 } from '../types/banner.types';
+
+import Skeleton
+  from '@/components/ui/Skeleton';
 
 const {
   width: SCREEN_WIDTH,
@@ -73,6 +78,9 @@ const ITEM_WIDTH =
 
 const AUTO_PLAY_INTERVAL =
   5000;
+
+const BANNER_HEIGHT =
+  320;
 
 const AnimatedFlatList =
   Animated.createAnimatedComponent(
@@ -90,14 +98,21 @@ function getBannerImageUri(
     return '';
   }
 
-  if (typeof image === 'string') {
+  if (
+    typeof image ===
+    'string'
+  ) {
+
     return image;
   }
 
+  // NEVER ORIGINAL IN FEED
   return (
+
     image.medium ||
-    image.original ||
+
     image.thumb ||
+
     ''
   );
 }
@@ -121,6 +136,11 @@ export default function HeroCarousel() {
   const currentIndexRef =
     useRef(0);
 
+  const intervalRef =
+    useRef<ReturnType<typeof setInterval> | null>(
+      null
+    );
+
   const [
     activeIndex,
     setActiveIndex,
@@ -128,6 +148,29 @@ export default function HeroCarousel() {
 
   const scrollX =
     useSharedValue(0);
+
+  // =========================
+  // PREFETCH
+  // =========================
+  useEffect(() => {
+
+    const urls = banners
+      .map((banner) =>
+
+        getBannerImageUri(
+          banner.image
+        )
+      )
+      .filter(Boolean);
+
+    if (urls.length > 0) {
+
+      Image.prefetch(
+        urls
+      );
+    }
+
+  }, [banners]);
 
   // =========================
   // AUTOPLAY
@@ -140,7 +183,7 @@ export default function HeroCarousel() {
       return;
     }
 
-    const interval =
+    intervalRef.current =
       setInterval(() => {
 
         let nextIndex =
@@ -157,7 +200,8 @@ export default function HeroCarousel() {
         flatListRef.current?.scrollToOffset({
 
           offset:
-            nextIndex * ITEM_WIDTH,
+            nextIndex *
+            ITEM_WIDTH,
 
           animated: true,
         });
@@ -171,14 +215,19 @@ export default function HeroCarousel() {
 
       }, AUTO_PLAY_INTERVAL);
 
-    return () =>
-      clearInterval(
-        interval
-      );
+    return () => {
 
-  }, [
-    banners.length,
-  ]);
+      if (
+        intervalRef.current
+      ) {
+
+        clearInterval(
+          intervalRef.current
+        );
+      }
+    };
+
+  }, [banners.length]);
 
   // =========================
   // SCROLL
@@ -195,104 +244,64 @@ export default function HeroCarousel() {
       },
     });
 
-  if (
-    banners.length === 0
-  ) {
-    return null;
-  }
+  // =========================
+  // MOMENTUM
+  // =========================
+  const handleMomentumEnd =
+    useCallback((
+      event: any
+    ) => {
 
-  return (
+      const index =
+        Math.round(
 
-    <View
-      style={{
-        marginBottom:
-          SPACING.xl,
+          event.nativeEvent
+            .contentOffset.x /
 
-        alignItems:
-          'center',
-      }}
-    >
-
-      <AnimatedFlatList
-        ref={flatListRef}
-
-        data={banners}
-
-        horizontal
-
-        pagingEnabled={false}
-
-        snapToInterval={
           ITEM_WIDTH
-        }
+        );
 
-        decelerationRate="fast"
+      currentIndexRef.current =
+        index;
 
-        bounces={false}
+      setActiveIndex(
+        index
+      );
 
-        showsHorizontalScrollIndicator={
-          false
-        }
+    }, []);
 
-        style={{
-          width:
-            ITEM_WIDTH,
-        }}
+  // =========================
+  // RENDER ITEM
+  // =========================
+  const renderItem =
+    useCallback(({
+      item,
+      index,
+    }: {
+      item: Banner;
+      index: number;
+    }) => (
 
-        contentContainerStyle={{
-          paddingHorizontal: 0,
-        }}
-
-        keyExtractor={(
-          item
-        ) => item.id}
-
-        onMomentumScrollEnd={(
-          event
-        ) => {
-
-          const index =
-            Math.round(
-
-              event.nativeEvent
-                .contentOffset.x /
-
-              ITEM_WIDTH
-            );
-
-          currentIndexRef.current =
-            index;
-
-          setActiveIndex(
-            index
-          );
-        }}
-
-        onScroll={
-          onScroll
-        }
-
-        scrollEventThrottle={
-          16
-        }
-
-        renderItem={({
-          item,
-          index,
-        }) => (
-
-          <CarouselItem
-            banner={item}
-            index={index}
-            scrollX={scrollX}
-            router={router}
-            COLORS={COLORS}
-          />
-
-        )}
+      <CarouselItem
+        banner={item}
+        index={index}
+        scrollX={scrollX}
+        router={router}
+        COLORS={COLORS}
       />
 
-      {/* PAGINATION */}
+    ), [
+      scrollX,
+      router,
+      COLORS,
+    ]);
+
+  // =========================
+  // PAGINATION
+  // =========================
+  const pagination =
+    useMemo(() => (
+
       <View
         style={{
 
@@ -309,7 +318,7 @@ export default function HeroCarousel() {
         }}
       >
 
-        {banners.map((
+        {banners.map(((
           _,
           index
         ) => {
@@ -342,9 +351,113 @@ export default function HeroCarousel() {
               }}
             />
           );
-        })}
+        }))}
 
       </View>
+
+    ), [
+      activeIndex,
+      banners,
+      COLORS,
+    ]);
+
+  // =========================
+  // EMPTY
+  // =========================
+  if (
+    banners.length === 0
+  ) {
+
+    return (
+
+      <View
+        style={{
+          height: BANNER_HEIGHT,
+          marginBottom: SPACING.xl,
+          overflow: 'hidden',
+        }}
+      >
+
+        <Skeleton
+          width="100%"
+          height={BANNER_HEIGHT}
+          radius={0}
+        />
+
+      </View>
+
+    );
+  }
+
+  return (
+
+    <View
+      style={{
+
+        marginBottom:
+          SPACING.xl,
+
+        alignItems:
+          'center',
+      }}
+    >
+
+      <AnimatedFlatList
+        ref={flatListRef}
+
+        data={banners}
+
+        horizontal
+
+        pagingEnabled={false}
+
+        snapToInterval={
+          ITEM_WIDTH
+        }
+
+        decelerationRate="fast"
+
+        bounces={false}
+
+        removeClippedSubviews
+
+        maxToRenderPerBatch={2}
+
+        windowSize={3}
+
+        initialNumToRender={1}
+
+        showsHorizontalScrollIndicator={
+          false
+        }
+
+        style={{
+          width:
+            ITEM_WIDTH,
+        }}
+
+        keyExtractor={(
+          item
+        ) => item.id}
+
+        onMomentumScrollEnd={
+          handleMomentumEnd
+        }
+
+        onScroll={
+          onScroll
+        }
+
+        scrollEventThrottle={
+          16
+        }
+
+        renderItem={
+          renderItem
+        }
+      />
+
+      {pagination}
 
     </View>
   );
@@ -373,19 +486,22 @@ const CarouselItem = memo(
         banner.image
       );
 
+    // =========================
+    // CARD ANIMATION
+    // =========================
     const animatedStyle =
       useAnimatedStyle(() => {
 
         const inputRange = [
 
           (index - 1) *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
 
           index *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
 
           (index + 1) *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
         ];
 
         const scale =
@@ -396,25 +512,9 @@ const CarouselItem = memo(
             inputRange,
 
             [
-              0.94,
+              0.97,
               1,
-              0.94,
-            ],
-
-            Extrapolation.CLAMP,
-          );
-
-        const opacity =
-          interpolate(
-
-            scrollX.value,
-
-            inputRange,
-
-            [
-              0.7,
-              1,
-              0.7,
+              0.97,
             ],
 
             Extrapolation.CLAMP,
@@ -425,24 +525,25 @@ const CarouselItem = memo(
           transform: [
             { scale },
           ],
-
-          opacity,
         };
       });
 
+    // =========================
+    // IMAGE ANIMATION
+    // =========================
     const imageAnimatedStyle =
       useAnimatedStyle(() => {
 
         const inputRange = [
 
           (index - 1) *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
 
           index *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
 
           (index + 1) *
-            ITEM_WIDTH,
+          ITEM_WIDTH,
         ];
 
         const translateX =
@@ -453,9 +554,9 @@ const CarouselItem = memo(
             inputRange,
 
             [
-              -18,
+              -10,
               0,
-              18,
+              10,
             ],
 
             Extrapolation.CLAMP,
@@ -476,7 +577,6 @@ const CarouselItem = memo(
       <Animated.View
         style={[
           {
-
             width:
               ITEM_WIDTH,
           },
@@ -498,30 +598,14 @@ const CarouselItem = memo(
           <View
             style={{
 
-              height: 320,
+              height:
+                BANNER_HEIGHT,
 
               overflow:
                 'hidden',
 
               backgroundColor:
                 COLORS.surface,
-
-              shadowColor:
-                '#000',
-
-              shadowOpacity:
-                0.25,
-
-              shadowRadius:
-                20,
-
-              shadowOffset: {
-
-                width: 0,
-                height: 10,
-              },
-
-              elevation: 10,
             }}
           >
 
@@ -547,13 +631,19 @@ const CarouselItem = memo(
 
                   contentFit="cover"
 
-                  transition={300}
+                  transition={120}
 
                   cachePolicy="memory-disk"
 
+                  allowDownscaling
+
+                  recyclingKey={
+                    banner.id
+                  }
+
                   style={{
 
-                    width: '104%',
+                    width: '100%',
                     height: '100%',
                   }}
                 />
