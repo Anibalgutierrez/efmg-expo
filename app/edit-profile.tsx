@@ -44,8 +44,16 @@ import {
 } from '../services/users/update-user.service';
 
 import {
+  syncUserData,
+} from '../services/users/sync-user-data.service';
+
+import {
   useUserStore,
 } from '../store/useUserStore';
+
+import {
+  usePostsStore,
+} from '../features/posts/store/usePostsStore';
 
 export default function EditProfileScreen() {
 
@@ -64,6 +72,12 @@ export default function EditProfileScreen() {
   const setUser =
     useUserStore(
       (state) => state.setUser
+    );
+
+  const updateUserPosts =
+    usePostsStore(
+      (state) =>
+        state.updateUserPosts
     );
 
   const {
@@ -120,6 +134,7 @@ export default function EditProfileScreen() {
     setAvatar(
       image.uri
     );
+
   }
 
   // =========================
@@ -146,12 +161,8 @@ export default function EditProfileScreen() {
         avatar &&
 
         avatar !== user.avatar
-      ) {
 
-        console.log(
-          'UPLOADING AVATAR:',
-          avatar
-        );
+      ) {
 
         const uploadedAvatar =
           await uploadImage(
@@ -161,18 +172,10 @@ export default function EditProfileScreen() {
             'avatars'
           );
 
-        console.log(
-          'UPLOADED AVATAR:',
-          uploadedAvatar
-        );
-
         avatarUrl =
           uploadedAvatar.original;
       }
 
-      // =========================
-      // UPDATE USER
-      // =========================
       const updatedUser = {
 
         ...user,
@@ -184,6 +187,9 @@ export default function EditProfileScreen() {
           avatarUrl,
       };
 
+      // =========================
+      // UPDATE USER DOC
+      // =========================
       await updateUser({
 
         userId:
@@ -199,8 +205,39 @@ export default function EditProfileScreen() {
         },
       });
 
+      // =========================
+      // UPDATE LOCAL STORES
+      // =========================
       setUser(
         updatedUser
+      );
+
+      updateUserPosts(
+        user.id,
+        {
+          name,
+          bio,
+
+          avatar:
+            avatarUrl,
+        }
+      );
+
+      console.log(
+  'NEW AVATAR:',
+  avatarUrl
+);
+
+      // =========================
+      // SYNC FIRESTORE POSTS
+      // =========================
+      await syncUserData(
+        user.id,
+        {
+          name,
+          bio,
+          avatar: avatarUrl,
+        }
       );
 
       Alert.alert(
@@ -327,7 +364,6 @@ export default function EditProfileScreen() {
 
         </View>
 
-        {/* NAME */}
         <View
           style={{
             marginTop:
@@ -386,7 +422,6 @@ export default function EditProfileScreen() {
 
         </View>
 
-        {/* BIO */}
         <View
           style={{
             marginTop:
@@ -480,5 +515,6 @@ export default function EditProfileScreen() {
       </Container>
 
     </Screen>
+
   );
 }

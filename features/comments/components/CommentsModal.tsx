@@ -510,8 +510,6 @@ function CommentsModal({
             keyExtractor
           }
 
-          estimatedItemSize={90}
-
           removeClippedSubviews
 
           keyboardShouldPersistTaps="handled"

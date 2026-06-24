@@ -48,6 +48,15 @@ type PostsStore = {
     commentsCount: number
   ) => void;
 
+  updateUserPosts: (
+    userId: string,
+    data: {
+      name: string;
+      avatar: string;
+      bio?: string;
+    }
+  ) => void;
+
   clearPosts: () => void;
 };
 
@@ -174,9 +183,10 @@ export const usePostsStore =
       mergePosts: (
         incomingPosts
       ) => set(
-        (state) => {
+        (
+          state
+        ) => {
 
-          // QUICK EXIT
           if (
             incomingPosts.length === 0
           ) {
@@ -184,15 +194,16 @@ export const usePostsStore =
             return state;
           }
 
-          // =========================
-          // EXISTING MAP
-          // =========================
           const existingMap =
             new Map(
 
               state.posts.map(
-                (post) => [
+                (
+                  post
+                ) => [
+
                   post.id,
+
                   post,
                 ]
               )
@@ -201,20 +212,20 @@ export const usePostsStore =
           let changed =
             false;
 
-          // =========================
-          // MERGED TOP
-          // =========================
           const mergedTop =
             incomingPosts.map(
-              (incoming) => {
+              (
+                incoming
+              ) => {
 
                 const existing =
                   existingMap.get(
                     incoming.id
                   );
 
-                // NEW POST
-                if (!existing) {
+                if (
+                  !existing
+                ) {
 
                   changed =
                     true;
@@ -222,7 +233,6 @@ export const usePostsStore =
                   return incoming;
                 }
 
-                // SAME
                 if (
 
                   arePostsEqual(
@@ -235,7 +245,6 @@ export const usePostsStore =
                   return existing;
                 }
 
-                // CHANGED
                 changed =
                   true;
 
@@ -243,21 +252,23 @@ export const usePostsStore =
               }
             );
 
-          // =========================
-          // KEEP PAGINATED
-          // =========================
           const incomingIds =
             new Set(
 
               incomingPosts.map(
-                (post) =>
+                (
+                  post
+                ) =>
+
                   post.id
               )
             );
 
           const remainingPosts =
             state.posts.filter(
-              (post) =>
+              (
+                post
+              ) =>
 
                 !incomingIds.has(
                   post.id
@@ -271,9 +282,6 @@ export const usePostsStore =
             ...remainingPosts,
           ];
 
-          // =========================
-          // NO CHANGES
-          // =========================
           if (
 
             !changed &&
@@ -309,14 +317,18 @@ export const usePostsStore =
         const existingIds =
           new Set(
             get().posts.map(
-              (post) =>
+              (
+                post
+              ) =>
                 post.id
             )
           );
 
         const filtered =
           newPosts.filter(
-            (post) =>
+            (
+              post
+            ) =>
 
               !existingIds.has(
                 post.id
@@ -330,7 +342,9 @@ export const usePostsStore =
         }
 
         set(
-          (state) => ({
+          (
+            state
+          ) => ({
 
             posts: [
 
@@ -348,14 +362,18 @@ export const usePostsStore =
       prependPost: (
         newPost
       ) => set(
-        (state) => ({
+        (
+          state
+        ) => ({
 
           posts: [
 
             newPost,
 
             ...state.posts.filter(
-              (post) =>
+              (
+                post
+              ) =>
 
                 post.id !==
                 newPost.id
@@ -370,39 +388,94 @@ export const usePostsStore =
       removePost: (
         postId
       ) => set(
-        (state) => ({
+        (
+          state
+        ) => {
 
-          posts:
-            state.posts.filter(
-              (post) =>
+          const exists =
+            state.posts.some(
+              (
+                post
+              ) =>
 
-                post.id !==
+                post.id ===
                 postId
-            ),
-        })
+            );
+
+          if (
+            !exists
+          ) {
+            return state;
+          }
+
+          return {
+
+            posts:
+              state.posts.filter(
+                (
+                  post
+                ) =>
+
+                  post.id !==
+                  postId
+              ),
+          };
+        }
       ),
 
       // =========================
-      // GENERIC UPDATE
+      // UPDATE POST
       // =========================
       updatePost: (
         postId,
         updater
       ) => set(
-        (state) => ({
+        (
+          state
+        ) => {
 
-          posts:
-            state.posts.map(
-              (post) =>
+          let changed =
+            false;
 
-                post.id ===
-                  postId
+          return {
 
-                  ? updater(post)
+            posts:
+              state.posts.map(
+                (
+                  post
+                ) => {
 
-                  : post
-            ),
-        })
+                  if (
+
+                    post.id !==
+                    postId
+
+                  ) {
+
+                    return post;
+                  }
+
+                  const updated =
+                    updater(
+                      post
+                    );
+
+                  if (
+                    updated ===
+                    post
+                  ) {
+
+                    return post;
+                  }
+
+                  changed =
+                    true;
+
+                  return updated;
+                }
+              ),
+          };
+        }
       ),
 
       // =========================
@@ -412,23 +485,43 @@ export const usePostsStore =
         postId,
         likesCount
       ) => set(
-        (state) => ({
+        (
+          state
+        ) => ({
 
           posts:
             state.posts.map(
-              (post) =>
+              (
+                post
+              ) => {
 
-                post.id ===
+                if (
+
+                  post.id !==
                   postId
 
-                  ? {
+                ) {
 
-                      ...post,
+                  return post;
+                }
 
-                      likesCount,
-                    }
+                if (
 
-                  : post
+                  post.likesCount ===
+                  likesCount
+
+                ) {
+
+                  return post;
+                }
+
+                return {
+
+                  ...post,
+
+                  likesCount,
+                };
+              }
             ),
         })
       ),
@@ -440,23 +533,102 @@ export const usePostsStore =
         postId,
         commentsCount
       ) => set(
-        (state) => ({
+        (
+          state
+        ) => ({
 
           posts:
             state.posts.map(
-              (post) =>
+              (
+                post
+              ) => {
 
-                post.id ===
+                if (
+
+                  post.id !==
                   postId
 
-                  ? {
+                ) {
 
-                      ...post,
+                  return post;
+                }
 
-                      commentsCount,
-                    }
+                if (
 
-                  : post
+                  post.commentsCount ===
+                  commentsCount
+
+                ) {
+
+                  return post;
+                }
+
+                return {
+
+                  ...post,
+
+                  commentsCount,
+                };
+              }
+            ),
+        })
+      ),
+
+      // =========================
+      // UPDATE USER POSTS
+      // =========================
+      updateUserPosts: (
+        userId,
+        data
+      ) => set(
+        (
+          state
+        ) => ({
+
+          posts:
+            state.posts.map(
+              (
+                post
+              ) => {
+
+                if (
+
+                  post.user.id !==
+                  userId
+
+                ) {
+
+                  return post;
+                }
+
+                if (
+
+                  post.user.name ===
+                    data.name &&
+
+                  post.user.avatar ===
+                    data.avatar &&
+
+                  post.user.bio ===
+                    data.bio
+
+                ) {
+
+                  return post;
+                }
+
+                return {
+
+                  ...post,
+
+                  user: {
+
+                    ...post.user,
+
+                    ...data,
+                  },
+                };
+              }
             ),
         })
       ),

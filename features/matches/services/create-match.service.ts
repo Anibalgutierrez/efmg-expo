@@ -1,6 +1,7 @@
 import {
   addDoc,
   collection,
+  getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
 
@@ -16,7 +17,20 @@ import {
   Category,
 } from '../../categories/types/category.types';
 
+import {
+  TournamentId,
+} from '../types/tournament.types';
+
+import {
+  createNotification,
+} from '../../../services/notifications/notifications.service';
+
+
+
 type Params = {
+
+  tournamentId:
+    TournamentId;
 
   homeTeam: Team;
 
@@ -30,6 +44,7 @@ type Params = {
 };
 
 export async function createMatchService({
+  tournamentId,
   homeTeam,
   awayTeam,
   category,
@@ -45,6 +60,10 @@ export async function createMatchService({
     ),
 
     {
+
+      /* TOURNAMENT */
+
+      tournamentId,
 
       /* TEAM IDS */
 
@@ -127,5 +146,51 @@ export async function createMatchService({
       updatedAt:
         serverTimestamp(),
     },
+  );
+
+  
+
+  // =========================
+  // NOTIFICATIONS
+  // =========================
+
+  const usersSnapshot =
+    await getDocs(
+
+      collection(
+        db,
+        'users',
+      ),
+    );
+
+  await Promise.all(
+
+    usersSnapshot.docs.map(
+      (
+        userDoc,
+      ) =>
+
+        createNotification({
+
+          receiverId:
+            userDoc.id,
+
+          type:
+            'match',
+
+          senderId:
+            'system',
+
+          senderName:
+            'EFMG',
+
+          senderAvatar:
+            '',
+
+          text:
+
+            `${homeTeam.name} vs ${awayTeam.name} · ${category.name}`,
+        }),
+    ),
   );
 }

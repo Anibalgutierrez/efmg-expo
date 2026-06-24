@@ -162,9 +162,10 @@ export default function HomeScreen() {
   // HEADER
   // =========================
   const listHeader =
-    useMemo(() => (
+  useMemo(
+    () => (
 
-      <>
+      <View>
 
         <HeroCarousel />
 
@@ -173,7 +174,11 @@ export default function HomeScreen() {
           <AppText
             style={{
 
-              marginVertical: 16,
+              marginTop: 20,
+
+              marginBottom: 16,
+
+              marginHorizontal: 16,
 
               fontWeight:
                 'bold',
@@ -184,9 +189,11 @@ export default function HomeScreen() {
 
         )}
 
-      </>
+      </View>
 
-    ), [user]);
+    ),
+    [user]
+  );
 
   return (
 
@@ -240,8 +247,6 @@ export default function HomeScreen() {
         <FlashList
 
           data={posts}
-
-          estimatedItemSize={560}
 
           keyExtractor={(item) =>
             item.id
@@ -345,10 +350,8 @@ export default function HomeScreen() {
           // =========================
           contentContainerStyle={{
 
-            paddingBottom: 140,
-
-            paddingHorizontal: 16,
-          }}
+  paddingBottom: 140,
+}}
         />
 
       </View>

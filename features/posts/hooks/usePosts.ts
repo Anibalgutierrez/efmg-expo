@@ -39,344 +39,138 @@ export default function usePosts() {
 
   const posts =
     usePostsStore(
-      (state) => state.posts
+      (state) => state.posts,
     );
 
   const setPosts =
     usePostsStore(
-      (state) => state.setPosts
-    );
-
-  const mergePosts =
-    usePostsStore(
-      (state) => state.mergePosts
+      (state) => state.setPosts,
     );
 
   const appendPosts =
     usePostsStore(
-      (state) => state.appendPosts
+      (state) => state.appendPosts,
     );
 
   const [
     loading,
     setLoading,
-  ] = useState(false);
+  ] = useState(
+    true,
+  );
 
   const [
     loadingMore,
     setLoadingMore,
-  ] = useState(false);
+  ] = useState(
+    false,
+  );
 
   const [
     refreshing,
     setRefreshing,
-  ] = useState(false);
+  ] = useState(
+    false,
+  );
 
   const [
     hasMore,
     setHasMore,
-  ] = useState(true);
+  ] = useState(
+    true,
+  );
 
   const lastDocRef =
     useRef<
       QueryDocumentSnapshot<DocumentData>
       | null
-    >(null);
-
-  const initializedRef =
-    useRef(false);
+    >(
+      null,
+    );
 
   // =========================
   // SERIALIZER
   // =========================
+
   const serializePosts =
     useCallback(
       (
-        snapshot: any
+        snapshot: any,
       ): Post[] => {
 
         return snapshot.docs.map(
-          (doc: any) => ({
+          (
+            doc: any,
+          ) => ({
 
-            id: doc.id,
+            id:
+              doc.id,
 
             ...doc.data(),
 
-          })
+          }),
         ) as Post[];
       },
-      []
+
+      [],
     );
-
-  // =========================
-  // INITIAL LOAD
-  // =========================
-  const loadInitialPosts =
-    useCallback(async () => {
-
-      try {
-
-        setLoading(true);
-
-        const q = query(
-
-          collection(
-            db,
-            'posts'
-          ),
-
-          orderBy(
-            'createdAt',
-            'desc'
-          ),
-
-          limit(
-            PAGE_SIZE
-          )
-        );
-
-        const snapshot =
-          await getDocs(q);
-
-        const fetchedPosts =
-          serializePosts(
-            snapshot
-          );
-
-        setPosts(
-          fetchedPosts
-        );
-
-        lastDocRef.current =
-          snapshot.docs[
-            snapshot.docs.length - 1
-          ] || null;
-
-        setHasMore(
-          snapshot.docs.length >=
-          PAGE_SIZE
-        );
-
-      } catch (error) {
-
-        console.log(
-          'LOAD POSTS ERROR:',
-          error
-        );
-
-      } finally {
-
-        setLoading(false);
-      }
-
-    }, [
-      serializePosts,
-      setPosts,
-    ]);
 
   // =========================
   // LOAD MORE
   // =========================
+
   const loadMorePosts =
-    useCallback(async () => {
+    useCallback(
+      async () => {
 
-      if (
-        loadingMore ||
-        !hasMore ||
-        !lastDocRef.current
-      ) return;
+        if (
+          loadingMore ||
+          !hasMore ||
+          !lastDocRef.current
+        ) {
+          return;
+        }
 
-      try {
+        try {
 
-        setLoadingMore(true);
-
-        const q = query(
-
-          collection(
-            db,
-            'posts'
-          ),
-
-          orderBy(
-            'createdAt',
-            'desc'
-          ),
-
-          startAfter(
-            lastDocRef.current
-          ),
-
-          limit(
-            PAGE_SIZE
-          )
-        );
-
-        const snapshot =
-          await getDocs(q);
-
-        const fetchedPosts =
-          serializePosts(
-            snapshot
+          setLoadingMore(
+            true,
           );
 
-        appendPosts(
-          fetchedPosts
-        );
+          const q =
+            query(
 
-        lastDocRef.current =
-          snapshot.docs[
-            snapshot.docs.length - 1
-          ] || null;
+              collection(
+                db,
+                'posts',
+              ),
 
-        setHasMore(
-          snapshot.docs.length >=
-          PAGE_SIZE
-        );
+              orderBy(
+                'createdAt',
+                'desc',
+              ),
 
-      } catch (error) {
+              startAfter(
+                lastDocRef.current,
+              ),
 
-        console.log(
-          'LOAD MORE ERROR:',
-          error
-        );
+              limit(
+                PAGE_SIZE,
+              ),
+            );
 
-      } finally {
-
-        setLoadingMore(false);
-      }
-
-    }, [
-
-      appendPosts,
-
-      hasMore,
-
-      loadingMore,
-
-      serializePosts,
-    ]);
-
-  // =========================
-  // REFRESH
-  // =========================
-  const refreshPosts =
-    useCallback(async () => {
-
-      try {
-
-        setRefreshing(true);
-
-        const q = query(
-
-          collection(
-            db,
-            'posts'
-          ),
-
-          orderBy(
-            'createdAt',
-            'desc'
-          ),
-
-          limit(
-            PAGE_SIZE
-          )
-        );
-
-        const snapshot =
-          await getDocs(q);
-
-        const fetchedPosts =
-          serializePosts(
-            snapshot
-          );
-
-        setPosts(
-          fetchedPosts
-        );
-
-        lastDocRef.current =
-          snapshot.docs[
-            snapshot.docs.length - 1
-          ] || null;
-
-        setHasMore(
-          snapshot.docs.length >=
-          PAGE_SIZE
-        );
-
-      } catch (error) {
-
-        console.log(
-          'REFRESH ERROR:',
-          error
-        );
-
-      } finally {
-
-        setRefreshing(false);
-      }
-
-    }, [
-      serializePosts,
-      setPosts,
-    ]);
-
-  // =========================
-  // FIRST LOAD
-  // =========================
-  useEffect(() => {
-
-    if (
-      initializedRef.current
-    ) return;
-
-    initializedRef.current =
-      true;
-
-    if (
-      posts.length === 0
-    ) {
-
-      loadInitialPosts();
-    }
-
-  }, []);
-
-  // =========================
-  // REALTIME TOP POSTS
-  // =========================
-  useEffect(() => {
-
-    const q = query(
-
-      collection(
-        db,
-        'posts'
-      ),
-
-      orderBy(
-        'createdAt',
-        'desc'
-      ),
-
-      limit(
-        PAGE_SIZE
-      )
-    );
-
-    const unsubscribe =
-      onSnapshot(
-        q,
-        (snapshot) => {
+          const snapshot =
+            await getDocs(
+              q,
+            );
 
           const fetchedPosts =
             serializePosts(
-              snapshot
+              snapshot,
             );
 
-          mergePosts(
-            fetchedPosts
+          appendPosts(
+            fetchedPosts,
           );
 
           lastDocRef.current =
@@ -385,53 +179,238 @@ export default function usePosts() {
             ] || null;
 
           setHasMore(
+
             snapshot.docs.length >=
-            PAGE_SIZE
+            PAGE_SIZE,
+          );
+
+        } catch (
+          error
+        ) {
+
+          console.log(
+            'LOAD MORE ERROR:',
+            error,
+          );
+
+        } finally {
+
+          setLoadingMore(
+            false,
           );
         }
-      );
+      },
 
-    return () =>
-      unsubscribe();
+      [
 
-  }, [
-    mergePosts,
-    serializePosts,
-  ]);
+        appendPosts,
+
+        hasMore,
+
+        loadingMore,
+
+        serializePosts,
+      ],
+    );
+
+  // =========================
+  // REFRESH
+  // =========================
+
+  const refreshPosts =
+    useCallback(
+      async () => {
+
+        setRefreshing(
+          true,
+        );
+
+        try {
+
+          const q =
+            query(
+
+              collection(
+                db,
+                'posts',
+              ),
+
+              orderBy(
+                'createdAt',
+                'desc',
+              ),
+
+              limit(
+                PAGE_SIZE,
+              ),
+            );
+
+          const snapshot =
+            await getDocs(
+              q,
+            );
+
+          const fetchedPosts =
+            serializePosts(
+              snapshot,
+            );
+
+          setPosts(
+            fetchedPosts,
+          );
+
+          lastDocRef.current =
+            snapshot.docs[
+              snapshot.docs.length - 1
+            ] || null;
+
+          setHasMore(
+
+            snapshot.docs.length >=
+            PAGE_SIZE,
+          );
+
+        } catch (
+          error
+        ) {
+
+          console.log(
+            'REFRESH ERROR:',
+            error,
+          );
+
+        } finally {
+
+          setRefreshing(
+            false,
+          );
+        }
+      },
+
+      [
+
+        serializePosts,
+
+        setPosts,
+      ],
+    );
+
+  // =========================
+  // REALTIME TOP POSTS
+  // =========================
+
+  useEffect(
+    () => {
+
+      const q =
+        query(
+
+          collection(
+            db,
+            'posts',
+          ),
+
+          orderBy(
+            'createdAt',
+            'desc',
+          ),
+
+          limit(
+            PAGE_SIZE,
+          ),
+        );
+
+      const unsubscribe =
+        onSnapshot(
+
+          q,
+
+          (
+            snapshot,
+          ) => {
+
+            const fetchedPosts =
+              serializePosts(
+                snapshot,
+              );
+
+            setPosts(
+              fetchedPosts,
+            );
+
+            lastDocRef.current =
+              snapshot.docs[
+                snapshot.docs.length - 1
+              ] || null;
+
+            setHasMore(
+
+              snapshot.docs.length >=
+              PAGE_SIZE,
+            );
+
+            setLoading(
+              false,
+            );
+          },
+        );
+
+      return unsubscribe;
+    },
+
+    [
+
+      serializePosts,
+
+      setPosts,
+    ],
+  );
 
   // =========================
   // PREFETCH IMAGES
   // =========================
+
   const imageUrls =
-    useMemo(() => {
+    useMemo(
+      () => {
 
-      return posts
-        .flatMap(
-          (post) => [
+        return posts
+          .flatMap(
 
-            post.user?.avatar,
+            (
+              post,
+            ) => [
 
-            ...(post.images || []).map(
-              (img) =>
+              post.user?.avatar,
 
-                img.medium ||
-                img.original ||
-                img.thumb
-            ),
+              ...(post.images || [])
+                .map(
 
-            post.thumbnail,
-          ]
-        )
-        .filter(
-          Boolean
-        ) as string[];
+                  (
+                    img,
+                  ) =>
 
-    }, [
-      posts,
-    ]);
+                    img.medium ||
+                    img.original ||
+                    img.thumb,
+                ),
+
+              post.thumbnail,
+            ],
+          )
+
+          .filter(
+            Boolean,
+          ) as string[];
+      },
+
+      [
+        posts,
+      ],
+    );
 
   useImagePrefetch(
-    imageUrls
+    imageUrls,
   );
 
   return {

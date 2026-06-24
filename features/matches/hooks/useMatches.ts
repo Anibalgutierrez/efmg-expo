@@ -27,6 +27,8 @@ export default function useMatches() {
 
     selectedFilter,
 
+    selectedTournament,
+
     setMatches,
 
     appendMatches,
@@ -52,7 +54,14 @@ export default function useMatches() {
           );
 
           const response =
-            await getMatchesService();
+            await getMatchesService({
+
+              tournamentId:
+                selectedTournament ===
+                'all'
+                  ? undefined
+                  : selectedTournament,
+            });
 
           setMatches(
             response.matches,
@@ -84,6 +93,7 @@ export default function useMatches() {
       },
 
       [
+        selectedTournament,
         setLoading,
         setMatches,
         setLastVisible,
@@ -110,6 +120,13 @@ export default function useMatches() {
 
           const response =
             await getMatchesService({
+
+              tournamentId:
+                selectedTournament ===
+                'all'
+                  ? undefined
+                  : selectedTournament,
+
               lastVisible,
             });
 
@@ -146,6 +163,7 @@ export default function useMatches() {
         loading,
         hasMore,
         lastVisible,
+        selectedTournament,
         appendMatches,
         setLoading,
         setLastVisible,
@@ -164,7 +182,14 @@ export default function useMatches() {
           );
 
           const response =
-            await getMatchesService();
+            await getMatchesService({
+
+              tournamentId:
+                selectedTournament ===
+                'all'
+                  ? undefined
+                  : selectedTournament,
+            });
 
           setMatches(
             response.matches,
@@ -196,6 +221,7 @@ export default function useMatches() {
       },
 
       [
+        selectedTournament,
         setRefreshing,
         setMatches,
         setLastVisible,
@@ -206,16 +232,10 @@ export default function useMatches() {
   useEffect(
     () => {
 
-      if (
-        matches.length === 0
-      ) {
-
-        loadInitialMatches();
-      }
+      loadInitialMatches();
     },
 
     [
-      matches.length,
       loadInitialMatches,
     ],
   );
@@ -229,6 +249,8 @@ export default function useMatches() {
     refreshing,
 
     selectedFilter,
+
+    selectedTournament,
 
     loadInitialMatches,
 

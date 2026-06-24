@@ -287,11 +287,6 @@ export default function MatchControlScreen() {
       error
     ) {
 
-      console.log(
-        'handleStartMatch error:',
-        error,
-      );
-
       Alert.alert(
         'Error',
         'No se pudo iniciar el partido.',

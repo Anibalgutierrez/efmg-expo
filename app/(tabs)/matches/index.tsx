@@ -6,6 +6,7 @@ import {
 import {
   FlatList,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
@@ -16,6 +17,9 @@ import {
 
 import Screen
 from '../../../components/ui/Screen';
+
+import Header
+from '@/components/ui/Header';
 
 import useTheme
 from '../../../hooks/useTheme';
@@ -29,6 +33,10 @@ from '../../../features/matches/components/MatchCard';
 import {
   Match,
 } from '../../../features/matches/types/match.types';
+
+import {
+  TournamentId,
+} from '../../../features/matches/types/tournament.types';
 
 import {
   subscribeMatchesService,
@@ -45,7 +53,42 @@ import {
 import {
   RADIUS,
 } from '../../../theme/radius';
-import Header from '@/components/ui/Header';
+
+const TOURNAMENTS: {
+  id: TournamentId | 'all';
+  label: string;
+}[] = [
+
+  {
+    id: 'all',
+    label: 'Todos',
+  },
+
+  {
+    id: 'lifat',
+    label: 'LIFAT',
+  },
+
+  {
+    id: 'cemef',
+    label: 'CEMEF',
+  },
+
+  {
+    id: 'cedem',
+    label: 'CEDEM',
+  },
+
+  {
+    id: 'bonaerenses',
+    label: 'Bonaerenses',
+  },
+
+  {
+    id: 'friendlies',
+    label: 'Amistosos',
+  },
+];
 
 export default function MatchesScreen() {
 
@@ -73,11 +116,27 @@ export default function MatchesScreen() {
     true,
   );
 
+  const [
+    selectedTournament,
+    setSelectedTournament,
+  ] = useState<
+    TournamentId | 'all'
+  >(
+    'all',
+  );
+
   useEffect(
     () => {
 
+      setLoading(
+        true,
+      );
+
       const unsubscribe =
         subscribeMatchesService(
+
+          selectedTournament,
+
           (
             data,
           ) => {
@@ -96,26 +155,28 @@ export default function MatchesScreen() {
         unsubscribe();
     },
 
-    [],
+    [
+      selectedTournament,
+    ],
   );
 
   return (
 
     <Screen>
 
-            <Header title="Partidos" />
-      
-
-      {/* CREATE BUTTON */}
+      <Header
+        title="Partidos"
+      />
 
       {
+
         canControlMatches && (
 
           <Pressable
 
             onPress={() =>
               router.push(
-                '/matches/create',
+                '/match/create',
               )
             }
 
@@ -158,9 +219,51 @@ export default function MatchesScreen() {
         )
       }
 
-      {/* CONTENT */}
+<View
+  style={{
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: SPACING.md,
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  }}
+>
+  {TOURNAMENTS.map((tournament) => {
+    const active = selectedTournament === tournament.id;
+
+    return (
+      <Pressable
+        key={tournament.id}
+        onPress={() => setSelectedTournament(tournament.id)}
+        style={{
+          minHeight: 38,
+          paddingHorizontal: SPACING.md,
+          paddingVertical: 8,
+          borderRadius: RADIUS.full,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: active ? COLORS.primary : COLORS.surface,
+          borderWidth: active ? 0 : 1,
+          borderColor: COLORS.border,
+        }}
+      >
+        <Text
+          style={{
+            color: active ? '#fff' : COLORS.text,
+            fontWeight: '700',
+            fontSize: TYPOGRAPHY.caption,
+            textAlign: 'center',
+          }}
+        >
+          {tournament.label}
+        </Text>
+      </Pressable>
+    );
+  })}
+</View>
 
       {
+
         loading ? (
 
           <View
@@ -228,7 +331,9 @@ export default function MatchesScreen() {
 
           <FlatList
 
-            data={matches}
+            data={
+              matches
+            }
 
             keyExtractor={(
               item,

@@ -30,6 +30,9 @@ export default function useUserPosts(
 
       setPosts([]);
 
+      initializedRef.current =
+        false;
+
       return;
     }
 
@@ -84,7 +87,9 @@ export default function useUserPosts(
                         incomingPost.id
                       );
 
+                    // =========================
                     // NEW POST
+                    // =========================
                     if (
                       !existing
                     ) {
@@ -110,7 +115,16 @@ export default function useUserPosts(
                         incomingPost.content ||
 
                       existing.thumbnail !==
-                        incomingPost.thumbnail;
+                        incomingPost.thumbnail ||
+
+                      existing.user?.avatar !==
+                        incomingPost.user?.avatar ||
+
+                      existing.user?.name !==
+                        incomingPost.user?.name ||
+
+                      existing.reelUrl !==
+                        incomingPost.reelUrl;
 
                     if (
                       hasChanged
@@ -122,7 +136,9 @@ export default function useUserPosts(
                       return incomingPost;
                     }
 
+                    // =========================
                     // KEEP OLD REFERENCE
+                    // =========================
                     return existing;
                   }
                 );

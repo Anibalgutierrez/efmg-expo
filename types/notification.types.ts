@@ -1,7 +1,8 @@
 export type NotificationType =
   | 'like'
   | 'comment'
-  | 'follow';
+  | 'follow'
+  | 'match';
 
 export type Notification = {
 

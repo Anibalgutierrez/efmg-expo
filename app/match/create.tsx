@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 
 import {
-  router,
   useRouter,
 } from 'expo-router';
 
@@ -45,6 +44,10 @@ import {
 } from '../../features/categories/types/category.types';
 
 import {
+  TournamentId,
+} from '../../features/matches/types/tournament.types';
+
+import {
   getTeamsService,
 } from '../../features/teams/services/get-teams.service';
 
@@ -63,6 +66,34 @@ import {
 import {
   TYPOGRAPHY,
 } from '../../theme/typography';
+
+const TOURNAMENTS = [
+
+  {
+    id: 'lifat',
+    name: 'LIFAT',
+  },
+
+  {
+    id: 'cemef',
+    name: 'CEMEF',
+  },
+
+  {
+    id: 'cedem',
+    name: 'CEDEM',
+  },
+
+   {
+    id: 'bonaerenses',
+    name: 'Juegos Bonaerenses',
+  },
+
+  {
+    id: 'friendlies',
+    name: 'Amistosos',
+  },
+];
 
 export default function CreateMatchScreen() {
 
@@ -88,6 +119,15 @@ export default function CreateMatchScreen() {
     setCategories,
   ] = useState<Category[]>(
     [],
+  );
+
+  const [
+    tournamentId,
+    setTournamentId,
+  ] = useState<
+    TournamentId | null
+  >(
+    null,
   );
 
   const [
@@ -132,6 +172,13 @@ export default function CreateMatchScreen() {
   ] = useState(false);
 
   /* MODALS */
+
+  const [
+    tournamentModalVisible,
+    setTournamentModalVisible,
+  ] = useState(
+    false,
+  );
 
   const [
     categoryModalVisible,
@@ -219,6 +266,7 @@ export default function CreateMatchScreen() {
   async function handleCreateMatch() {
 
     if (
+      !tournamentId ||
       !homeTeam ||
       !awayTeam ||
       !category ||
@@ -259,16 +307,6 @@ export default function CreateMatchScreen() {
         `${normalizedDate}T${matchTime}:00`,
       );
 
-    console.log(
-      'normalizedDate:',
-      normalizedDate,
-    );
-
-    console.log(
-      'finalDate:',
-      finalDate,
-    );
-
     if (
       isNaN(
         finalDate.getTime(),
@@ -289,11 +327,9 @@ export default function CreateMatchScreen() {
         true,
       );
 
-      console.log(
-        'CREATING MATCH...',
-      );
-
       await createMatchService({
+
+        tournamentId,
 
         homeTeam,
 
@@ -351,7 +387,6 @@ export default function CreateMatchScreen() {
 
       <Header
         title="Crear"
-
         onBack={() => {
 
           if (
@@ -401,7 +436,26 @@ export default function CreateMatchScreen() {
           Crear Partido
         </Text>
 
-        {/* CATEGORY */}
+        <SelectorCard
+
+          label="Torneo"
+
+          value={
+            TOURNAMENTS.find(
+              tournament =>
+                tournament.id ===
+                tournamentId,
+            )?.name
+          }
+
+          placeholder="Seleccionar torneo"
+
+          onPress={() =>
+            setTournamentModalVisible(
+              true,
+            )
+          }
+        />
 
         <SelectorCard
 
@@ -420,8 +474,6 @@ export default function CreateMatchScreen() {
           }
         />
 
-        {/* HOME TEAM */}
-
         <SelectorCard
 
           label="Equipo Local"
@@ -438,8 +490,6 @@ export default function CreateMatchScreen() {
             )
           }
         />
-
-        {/* AWAY TEAM */}
 
         <SelectorCard
 
@@ -458,8 +508,6 @@ export default function CreateMatchScreen() {
           }
         />
 
-        {/* VENUE */}
-
         <Input
           label="Cancha"
           placeholder="Cancha 1"
@@ -468,8 +516,6 @@ export default function CreateMatchScreen() {
             setVenue
           }
         />
-
-        {/* DATE */}
 
         <Input
           label="Fecha"
@@ -480,8 +526,6 @@ export default function CreateMatchScreen() {
           }
         />
 
-        {/* TIME */}
-
         <Input
           label="Hora"
           placeholder="18:30"
@@ -491,28 +535,11 @@ export default function CreateMatchScreen() {
           }
         />
 
-        {/* BUTTON */}
-
         <Pressable
 
-          onPress={() => {
-
-            console.log(
-              'PRESS WORKING',
-            );
-
-            console.log(
-              'VALUES:',
-              homeTeam?.name,
-              awayTeam?.name,
-              category?.name,
-              venue,
-              matchDate,
-              matchTime,
-            );
-
-            handleCreateMatch();
-          }}
+          onPress={
+            handleCreateMatch
+          }
 
           style={{
 
@@ -549,7 +576,32 @@ export default function CreateMatchScreen() {
 
       </ScrollView>
 
-      {/* CATEGORY MODAL */}
+      <SelectModal
+
+        visible={
+          tournamentModalVisible
+        }
+
+        title="Seleccionar torneo"
+
+        items={
+          TOURNAMENTS
+        }
+
+        onClose={() =>
+          setTournamentModalVisible(
+            false,
+          )
+        }
+
+        onSelect={(
+          item,
+        ) =>
+          setTournamentId(
+            item.id as TournamentId,
+          )
+        }
+      />
 
       <SelectModal
 
@@ -559,7 +611,9 @@ export default function CreateMatchScreen() {
 
         title="Seleccionar categoría"
 
-        items={categories}
+        items={
+          categories
+        }
 
         onClose={() =>
           setCategoryModalVisible(
@@ -576,8 +630,6 @@ export default function CreateMatchScreen() {
         }
       />
 
-      {/* HOME TEAM MODAL */}
-
       <SelectModal
 
         visible={
@@ -586,7 +638,9 @@ export default function CreateMatchScreen() {
 
         title="Equipo Local"
 
-        items={teams}
+        items={
+          teams
+        }
 
         onClose={() =>
           setHomeModalVisible(
@@ -603,8 +657,6 @@ export default function CreateMatchScreen() {
         }
       />
 
-      {/* AWAY TEAM MODAL */}
-
       <SelectModal
 
         visible={
@@ -613,7 +665,9 @@ export default function CreateMatchScreen() {
 
         title="Equipo Visitante"
 
-        items={teams}
+        items={
+          teams
+        }
 
         onClose={() =>
           setAwayModalVisible(

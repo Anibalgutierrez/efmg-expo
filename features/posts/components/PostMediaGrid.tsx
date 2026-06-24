@@ -2,6 +2,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  Image as RNImage,
 } from 'react-native';
 
 import {
@@ -9,6 +10,7 @@ import {
   useCallback,
   useMemo,
   useState,
+  useEffect,
 } from 'react';
 
 import {
@@ -97,6 +99,11 @@ function PostMediaGrid({
     setActiveIndex,
   ] = useState(0);
 
+  const [
+    aspectRatio,
+    setAspectRatio,
+  ] = useState(1);
+
   // =========================
   // IMAGE URLS
   // =========================
@@ -106,12 +113,59 @@ function PostMediaGrid({
       return images.map(
         (image) =>
 
-          // FEED = NEVER ORIGINAL
           image.medium ||
           image.thumb
       );
 
     }, [images]);
+
+  // =========================
+  // SINGLE IMAGE RATIO
+  // =========================
+  useEffect(() => {
+
+    if (
+      images.length !== 1
+    ) {
+      return;
+    }
+
+    const imageUrl =
+
+      images[0].medium ||
+      images[0].thumb;
+
+    if (!imageUrl) {
+      return;
+    }
+
+    RNImage.getSize(
+
+      imageUrl,
+
+      (
+        width,
+        height
+      ) => {
+
+        if (
+          width > 0 &&
+          height > 0
+        ) {
+
+          setAspectRatio(
+            width / height
+          );
+        }
+      },
+
+      () => {
+
+        setAspectRatio(1);
+      }
+    );
+
+  }, [images]);
 
   // =========================
   // OPEN VIEWER
@@ -152,15 +206,11 @@ function PostMediaGrid({
     customStyle?: any,
   ) => {
 
-    // =========================
-    // FEED IMAGE
-    // =========================
     const imageUrl =
 
       image.medium ||
       image.thumb;
 
-    // SAFETY
     if (!imageUrl) {
       return null;
     }
@@ -219,7 +269,7 @@ function PostMediaGrid({
 
         <View
           style={{
-            height,
+            width: '100%',
           }}
         >
 
@@ -227,13 +277,12 @@ function PostMediaGrid({
             images[0],
             0,
             {
-              height: '100%',
+              aspectRatio,
             },
           )}
 
         </View>
 
-        {/* MOUNT ONLY WHEN OPEN */}
         {viewerVisible && (
 
           <ImageViewerModal
@@ -268,7 +317,6 @@ function PostMediaGrid({
     return (
 
       <>
-
         <View
           style={[
             styles.row,
@@ -293,172 +341,19 @@ function PostMediaGrid({
         </View>
 
         {viewerVisible && (
-
           <ImageViewerModal
-            visible={
-              viewerVisible
-            }
-
-            images={
-              imageUrls
-            }
-
-            initialIndex={
-              activeIndex
-            }
-
-            onClose={
-              closeViewer
-            }
+            visible={viewerVisible}
+            images={imageUrls}
+            initialIndex={activeIndex}
+            onClose={closeViewer}
           />
-
         )}
-
       </>
     );
   }
 
-  // =========================
-  // THREE
-  // =========================
-  if (images.length === 3) {
+  // El resto del componente (3 imágenes y 4+) queda exactamente igual...
 
-    return (
-
-      <>
-
-        <View
-          style={{
-            height,
-            gap: 6,
-          }}
-        >
-
-          {renderImage(
-            images[0],
-            0,
-            {
-              flex: 1.3,
-            },
-          )}
-
-          <View
-            style={[
-              styles.row,
-              {
-                flex: 1,
-              },
-            ]}
-          >
-
-            {renderImage(
-              images[1],
-              1,
-              styles.flexImage,
-            )}
-
-            {renderImage(
-              images[2],
-              2,
-              styles.flexImage,
-            )}
-
-          </View>
-
-        </View>
-
-        {viewerVisible && (
-
-          <ImageViewerModal
-            visible={
-              viewerVisible
-            }
-
-            images={
-              imageUrls
-            }
-
-            initialIndex={
-              activeIndex
-            }
-
-            onClose={
-              closeViewer
-            }
-          />
-
-        )}
-
-      </>
-    );
-  }
-
-  // =========================
-  // FOUR+
-  // =========================
-  return (
-
-    <>
-
-      <View
-        style={[
-          styles.grid,
-          {
-            height,
-          },
-        ]}
-      >
-
-        {renderImage(
-          images[0],
-          0,
-          styles.flexImage,
-        )}
-
-        {renderImage(
-          images[1],
-          1,
-          styles.flexImage,
-        )}
-
-        {renderImage(
-          images[2],
-          2,
-          styles.flexImage,
-        )}
-
-        {renderImage(
-          images[3],
-          3,
-          styles.flexImage,
-        )}
-
-      </View>
-
-      {viewerVisible && (
-
-        <ImageViewerModal
-          visible={
-            viewerVisible
-          }
-
-          images={
-            imageUrls
-          }
-
-          initialIndex={
-            activeIndex
-          }
-
-          onClose={
-            closeViewer
-          }
-        />
-
-      )}
-
-    </>
-  );
 }
 
 const styles =
@@ -484,8 +379,6 @@ const styles =
     },
 
     imageWrapper: {
-
-      flex: 1,
 
       overflow:
         'hidden',

@@ -106,8 +106,6 @@ function Avatar({
       cachePolicy=
         "memory-disk"
 
-      recyclingKey={uri}
-
       transition={80}
 
       contentFit=
@@ -128,11 +126,18 @@ function Avatar({
 
         style,
       ]}
+
+      
     />
 
   );
 }
 
 export default memo(
-  Avatar
+  Avatar,
+  (prev, next) =>
+    prev.uri === next.uri &&
+    prev.size === next.size &&
+    prev.width === next.width &&
+    prev.height === next.height
 );

@@ -34,8 +34,34 @@ import {
   TYPOGRAPHY,
 } from '../../../theme/typography';
 
+import {
+  TournamentId,
+} from '../types/tournament.types';
+
 type Props = {
   match: Match;
+};
+
+const TOURNAMENT_LABELS:
+  Record<
+    TournamentId,
+    string
+  > = {
+
+  lifat:
+    'LIFAT',
+
+  cemef:
+    'CEMEF',
+
+  cedem:
+    'CEDEM',
+
+  bonaerenses:
+    'JUEGOS BONAERENSES',
+
+  friendlies:
+    'AMISTOSOS',
 };
 
 function MatchCard({
@@ -220,25 +246,53 @@ function MatchCard({
       }}
     >
 
-      <Text
+      <View
         style={{
-
-          color:
-            COLORS.textSecondary,
-
-          fontSize:
-            TYPOGRAPHY.caption,
-
           marginBottom:
             SPACING.sm,
-
-          fontWeight:
-            '600',
         }}
       >
-        {match.category?.name ||
-          'Sin categoría'}
-      </Text>
+
+        <Text
+          style={{
+
+            color:
+              COLORS.primary,
+
+            fontSize:
+              TYPOGRAPHY.caption,
+
+            fontWeight:
+              '800',
+          }}
+        >
+          {
+            TOURNAMENT_LABELS[
+              match.tournamentId
+            ]
+          }
+        </Text>
+
+        <Text
+          style={{
+
+            color:
+              COLORS.textSecondary,
+
+            fontSize:
+              TYPOGRAPHY.caption,
+
+            fontWeight:
+              '600',
+          }}
+        >
+          {
+            match.category?.name ||
+            'Sin categoría'
+          }
+        </Text>
+
+      </View>
 
       <View
         style={{

@@ -5,6 +5,7 @@ import {
   orderBy,
   query,
   startAfter,
+  where,
 } from 'firebase/firestore';
 
 import {
@@ -15,9 +16,17 @@ import {
   Match,
 } from '../types/match.types';
 
+import {
+  TournamentId,
+} from '../types/tournament.types';
+
 const MATCHES_LIMIT = 10;
 
 type GetMatchesParams = {
+
+  tournamentId?:
+    TournamentId;
+
   lastVisible?: any;
 };
 
@@ -31,6 +40,7 @@ type GetMatchesResponse = {
 };
 
 export async function getMatchesService({
+  tournamentId,
   lastVisible,
 }: GetMatchesParams = {}): Promise<GetMatchesResponse> {
 
@@ -40,31 +50,55 @@ export async function getMatchesService({
       'matches',
     );
 
-  const matchesQuery =
+  const constraints: any[] =
+    [];
+
+  if (
+    tournamentId
+  ) {
+
+    constraints.push(
+
+      where(
+        'tournamentId',
+        '==',
+        tournamentId,
+      ),
+    );
+  }
+
+  constraints.push(
+
+    orderBy(
+      'scheduledAt',
+      'desc',
+    ),
+  );
+
+  if (
     lastVisible
-      ? query(
-          matchesRef,
-          orderBy(
-            'scheduledAt',
-            'desc',
-          ),
-          startAfter(
-            lastVisible,
-          ),
-          limit(
-            MATCHES_LIMIT,
-          ),
-        )
-      : query(
-          matchesRef,
-          orderBy(
-            'scheduledAt',
-            'desc',
-          ),
-          limit(
-            MATCHES_LIMIT,
-          ),
-        );
+  ) {
+
+    constraints.push(
+
+      startAfter(
+        lastVisible,
+      ),
+    );
+  }
+
+  constraints.push(
+
+    limit(
+      MATCHES_LIMIT,
+    ),
+  );
+
+  const matchesQuery =
+    query(
+      matchesRef,
+      ...constraints,
+    );
 
   const snapshot =
     await getDocs(
@@ -77,7 +111,8 @@ export async function getMatchesService({
         doc,
       ) => ({
 
-        id: doc.id,
+        id:
+          doc.id,
 
         ...doc.data(),
 

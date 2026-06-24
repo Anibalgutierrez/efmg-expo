@@ -2,6 +2,10 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 
+import {
+  TournamentId,
+} from './tournament.types';
+
 export type MatchStatus =
   | 'scheduled'
   | 'live'
@@ -37,6 +41,9 @@ export interface MatchCategory {
 export interface Match {
 
   id: string;
+
+  tournamentId:
+    TournamentId;
 
   homeTeam: MatchTeam;
 

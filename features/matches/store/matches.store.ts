@@ -4,6 +4,10 @@ import {
   Match,
 } from '../types/match.types';
 
+import {
+  TournamentId,
+} from '../types/tournament.types';
+
 export type MatchFilter =
   | 'all'
   | 'live'
@@ -20,6 +24,9 @@ type MatchesStore = {
   refreshing: boolean;
 
   selectedFilter: MatchFilter;
+
+  selectedTournament:
+    TournamentId | 'all';
 
   lastVisible: any | null;
 
@@ -45,6 +52,11 @@ type MatchesStore = {
     filter: MatchFilter,
   ) => void;
 
+  setTournament: (
+    tournament:
+      TournamentId | 'all',
+  ) => void;
+
   setLastVisible: (
     value: any,
   ) => void;
@@ -66,7 +78,11 @@ export const useMatchesStore =
 
       refreshing: false,
 
-      selectedFilter: 'all',
+      selectedFilter:
+        'all',
+
+      selectedTournament:
+        'all',
 
       lastVisible: null,
 
@@ -117,6 +133,14 @@ export const useMatchesStore =
             filter,
         }),
 
+      setTournament: (
+        tournament,
+      ) =>
+        set({
+          selectedTournament:
+            tournament,
+        }),
+
       setLastVisible: (
         value,
       ) =>
@@ -142,6 +166,9 @@ export const useMatchesStore =
           refreshing: false,
 
           selectedFilter:
+            'all',
+
+          selectedTournament:
             'all',
 
           lastVisible:

@@ -27,7 +27,8 @@ type CreateNotificationParams = {
   type:
     | 'like'
     | 'comment'
-    | 'follow';
+    | 'follow'
+    | 'match';
 
   senderId: string;
 

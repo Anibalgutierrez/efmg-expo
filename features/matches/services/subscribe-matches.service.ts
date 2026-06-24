@@ -3,6 +3,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
 } from 'firebase/firestore';
 
 import {
@@ -13,11 +14,19 @@ import {
   Match,
 } from '../types/match.types';
 
+import {
+  TournamentId,
+} from '../types/tournament.types';
+
 type Callback = (
   matches: Match[],
 ) => void;
 
 export function subscribeMatchesService(
+
+  tournamentId:
+    TournamentId | 'all',
+
   callback: Callback,
 ) {
 
@@ -27,13 +36,36 @@ export function subscribeMatchesService(
       'matches',
     );
 
+  const constraints: any[] =
+    [];
+
+  if (
+    tournamentId !==
+    'all'
+  ) {
+
+    constraints.push(
+
+      where(
+        'tournamentId',
+        '==',
+        tournamentId,
+      ),
+    );
+  }
+
+  constraints.push(
+
+    orderBy(
+      'scheduledAt',
+      'desc',
+    ),
+  );
+
   const q =
     query(
       ref,
-      orderBy(
-        'scheduledAt',
-        'desc',
-      ),
+      ...constraints,
     );
 
   return onSnapshot(

@@ -98,6 +98,14 @@ export default function ProfileScreen() {
     );
   }
 
+  console.log(
+  'PROFILE POSTS',
+  posts.map(post => ({
+    id: post.id,
+    avatar: post.user.avatar,
+  }))
+);
+
   return (
 
     <Screen>

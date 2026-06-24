@@ -21,13 +21,11 @@ export function subscribeToUserPosts(
 
   const q = query(
     postsRef,
-
     where(
       'user.id',
       '==',
       userId
     ),
-
     orderBy(
       'createdAt',
       'desc'
@@ -37,11 +35,12 @@ export function subscribeToUserPosts(
   return onSnapshot(
     q,
     (snapshot) => {
+
       const posts: Post[] =
         snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-        })) as Post[];
+        })) as Post[];       
 
       callback(posts);
     }

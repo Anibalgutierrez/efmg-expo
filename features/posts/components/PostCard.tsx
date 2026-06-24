@@ -565,29 +565,21 @@ function PostCard({
 
 export default memo(
   PostCard,
-  (prev, next) => {
+  (prev, next) => (
 
-    return (
+    prev.post.id === next.post.id &&
+    prev.post.likesCount === next.post.likesCount &&
+    prev.post.commentsCount === next.post.commentsCount &&
+    prev.post.content === next.post.content &&
+    prev.post.thumbnail === next.post.thumbnail &&
 
-      prev.post.id ===
-        next.post.id &&
+    prev.post.user.id === next.post.user.id &&
+    prev.post.user.name === next.post.user.name &&
+    prev.post.user.avatar === next.post.user.avatar &&
 
-      prev.post.likesCount ===
-        next.post.likesCount &&
-
-      prev.post.commentsCount ===
-        next.post.commentsCount &&
-
-      prev.post.content ===
-        next.post.content &&
-
-      areImagesEqual(
-        prev.post.images,
-        next.post.images
-      ) &&
-
-      prev.post.thumbnail ===
-        next.post.thumbnail
-    );
-  }
+    areImagesEqual(
+      prev.post.images,
+      next.post.images
+    )
+  )
 );

@@ -2,7 +2,6 @@ import {
   View,
   Pressable,
   Keyboard,
-  useWindowDimensions,
 } from 'react-native';
 
 import {
@@ -91,10 +90,6 @@ function ReelCard({
     useRouter();
 
   const {
-    width,
-  } = useWindowDimensions();
-
-  const {
     COLORS,
   } = useTheme();
 
@@ -128,19 +123,12 @@ function ReelCard({
     likes,
     toggleLike,
   } = useLikePost(
-
     post.id,
-
     post.likesCount,
-
     user?.id,
-
     post.user.id
   );
 
-  // =========================
-  // DATE
-  // =========================
   const createdAtText =
     useMemo(() => {
 
@@ -152,9 +140,6 @@ function ReelCard({
       post.createdAt,
     ]);
 
-  // =========================
-  // THUMB
-  // =========================
   const thumbnail =
     useMemo(() => {
 
@@ -166,21 +151,6 @@ function ReelCard({
       post.thumbnail,
     ]);
 
-  // =========================
-  // HEIGHT
-  // =========================
-  const mediaHeight =
-    useMemo(() => {
-
-      return width > 500
-        ? 520
-        : 420;
-
-    }, [width]);
-
-  // =========================
-  // ACTIONS
-  // =========================
   const openComments =
     useCallback(() => {
 
@@ -251,9 +221,6 @@ function ReelCard({
       router,
     ]);
 
-  // =========================
-  // DELETE
-  // =========================
   const handleDeletePost =
     useCallback(async () => {
 
@@ -289,7 +256,6 @@ function ReelCard({
 
       <Card>
 
-        {/* HEADER */}
         <PostHeader
           post={post}
           createdAtText={createdAtText}
@@ -298,7 +264,6 @@ function ReelCard({
           onPressDelete={openDeleteModal}
         />
 
-        {/* CONTENT */}
         {!!post.content && (
 
           <AppText
@@ -318,7 +283,6 @@ function ReelCard({
 
         )}
 
-        {/* REEL */}
         {!!thumbnail && (
 
           <Pressable
@@ -351,8 +315,8 @@ function ReelCard({
 
                   width: '100%',
 
-                  height:
-                    mediaHeight,
+                  aspectRatio:
+                    16 / 9,
 
                   borderRadius: 18,
 
@@ -422,7 +386,6 @@ function ReelCard({
 
         <Divider />
 
-        {/* ACTIONS */}
         <PostActions
           liked={liked}
           likes={likes}
@@ -433,7 +396,6 @@ function ReelCard({
 
       </Card>
 
-      {/* COMMENTS */}
       {commentsVisible && (
 
         <CommentsModal
@@ -456,7 +418,6 @@ function ReelCard({
 
       )}
 
-      {/* DELETE */}
       <ConfirmModal
         visible={
           deleteVisible
@@ -501,10 +462,16 @@ export default memo(
     prev.post.thumbnail ===
       next.post.thumbnail &&
 
+    prev.post.reelUrl ===
+      next.post.reelUrl &&
+
     prev.post.user.id ===
       next.post.user.id &&
 
     prev.post.user.name ===
-      next.post.user.name
+      next.post.user.name &&
+
+    prev.post.user.avatar ===
+      next.post.user.avatar
   )
 );
